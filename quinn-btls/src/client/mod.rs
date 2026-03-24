@@ -36,6 +36,24 @@ impl Config {
 
         builder.set_default_verify_paths()?;
 
+        Self::from_builder(builder)
+    }
+
+    /// Create a QUIC client config from a pre-configured [SslContextBuilder].
+    ///
+    /// The caller is responsible for setting TLS parameters on the builder
+    /// (cipher list, curves, sigalgs, certificate verification, cert compression, etc.)
+    /// before passing it here. This constructor enforces TLS 1.3 and applies
+    /// QUIC-specific settings (ALPN, session cache, QUIC method callbacks, early data).
+    ///
+    /// This is useful when the system CA store is unavailable (e.g. Windows) and
+    /// custom root certificates need to be injected, or when per-profile TLS
+    /// fingerprint configuration is required (different ciphers for different browsers).
+    pub fn from_builder(mut builder: SslContextBuilder) -> Result<Self> {
+        // QUIC requires TLS 1.3.
+        builder.set_min_proto_version(Some(SslVersion::TLS1_3))?;
+        builder.set_max_proto_version(Some(SslVersion::TLS1_3))?;
+
         // We build the context early, since we are not allowed to further mutate the context
         // in start_session.
         let mut ctx = builder.build();
