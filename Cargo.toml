@@ -19,6 +19,12 @@ repository = "https://github.com/0x676e67/btls"
 edition = "2021"
 rust-version = "1.85"
 
+# quinn-btls implements `crypto::Session::poll_handshake` of the scrape-hub/quinn fork.
+[patch.crates-io]
+quinn = { git = "https://github.com/scrape-hub/quinn", tag = "koon-1.0.0" }
+quinn-proto = { git = "https://github.com/scrape-hub/quinn", tag = "koon-1.0.0" }
+quinn-udp = { git = "https://github.com/scrape-hub/quinn", tag = "koon-1.0.0" }
+
 [workspace.metadata.release]
 pre-release-commit-message = "Release {{version}}"
 shared-version = true

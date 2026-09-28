@@ -4,7 +4,6 @@ use std::result::Result as StdResult;
 /// QUIC protocol version
 ///
 /// Governs version-specific behavior in the TLS layer
-// TODO: add support for draft version 2.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum QuicVersion {
@@ -18,6 +17,10 @@ pub enum QuicVersion {
     /// First stable RFC version.
     #[default]
     V1,
+
+    /// QUIC version 2 (RFC 9369). Not among [QuicVersion::default_supported_versions]: an
+    /// endpoint uses it once it is added to its `EndpointConfig::supported_versions`.
+    V2,
 }
 
 impl QuicVersion {
@@ -29,6 +32,7 @@ impl QuicVersion {
     const VERSION_1_DRAFT_33: u32 = Self::DRAFT_INDICATOR | 33;
     const VERSION_1_DRAFT_34: u32 = Self::DRAFT_INDICATOR | 34;
     const VERSION_1: u32 = 1;
+    const VERSION_2: u32 = 0x6b33_43cf;
 
     /// Returns the default list of supported quic versions.
     pub fn default_supported_versions() -> Vec<u32> {
@@ -56,6 +60,7 @@ impl QuicVersion {
             Self::VERSION_1_DRAFT_33 => Ok(Self::V1Draft33),
             Self::VERSION_1_DRAFT_34 => Ok(Self::V1Draft34),
             Self::VERSION_1 => Ok(Self::V1),
+            Self::VERSION_2 => Ok(Self::V2),
             _ => Err(crypto::UnsupportedVersion),
         }
     }
@@ -69,6 +74,7 @@ impl QuicVersion {
             Self::V1Draft33 => Self::VERSION_1_DRAFT_33,
             Self::V1Draft34 => Self::VERSION_1_DRAFT_34,
             Self::V1 => Self::VERSION_1,
+            Self::V2 => Self::VERSION_2,
         }
     }
 
@@ -83,6 +89,11 @@ impl QuicVersion {
                 // https://www.rfc-editor.org/rfc/rfc9001.html#name-initial-secrets
                 0x38, 0x76, 0x2c, 0xf7, 0xf5, 0x59, 0x34, 0xb3, 0x4d, 0x17, 0x9a, 0xe6, 0xa4, 0xc8,
                 0x0c, 0xad, 0xcc, 0xbb, 0x7f, 0x0a,
+            ],
+            Self::V2 => &[
+                // https://www.rfc-editor.org/rfc/rfc9369.html#name-initial-salt
+                0x0d, 0xed, 0xe3, 0xde, 0xf7, 0x00, 0xa6, 0xdb, 0x81, 0x93, 0x81, 0xbe, 0x6e, 0x26,
+                0x9d, 0xcb, 0xf9, 0xbd, 0x2e, 0xd9,
             ],
         }
     }
@@ -99,6 +110,11 @@ impl QuicVersion {
                 0xbe, 0x0c, 0x69, 0x0b, 0x9f, 0x66, 0x57, 0x5a, 0x1d, 0x76, 0x6b, 0x54, 0xe3, 0x68,
                 0xc8, 0x4e,
             ],
+            Self::V2 => &[
+                // https://www.rfc-editor.org/rfc/rfc9369.html#name-retry-integrity-tag
+                0x8f, 0xb4, 0xb0, 0x1b, 0x56, 0xac, 0x48, 0xe2, 0x60, 0xfb, 0xcb, 0xce, 0xad, 0x7c,
+                0xcc, 0x92,
+            ],
         }
     }
 
@@ -112,6 +128,10 @@ impl QuicVersion {
                 // https://datatracker.ietf.org/doc/html/rfc9001#name-retry-packet-integrity
                 0x46, 0x15, 0x99, 0xd3, 0x5d, 0x63, 0x2b, 0xf2, 0x23, 0x98, 0x25, 0xbb,
             ],
+            Self::V2 => &[
+                // https://www.rfc-editor.org/rfc/rfc9369.html#name-retry-integrity-tag
+                0xd8, 0x69, 0x69, 0xbc, 0x2d, 0x7c, 0x6d, 0x99, 0x90, 0xef, 0xb0, 0x4a,
+            ],
         }
     }
 
@@ -124,23 +144,38 @@ impl QuicVersion {
             | Self::V1Draft32
             | Self::V1Draft33
             | Self::V1Draft34 => true,
-            Self::V1 => false,
+            Self::V1 | Self::V2 => false,
         }
     }
 
+    // The labels of the keys derived from a secret: version 2 has its own
+    // (https://www.rfc-editor.org/rfc/rfc9369.html#name-hmac-based-key-derivation-f).
+
     pub(crate) fn key_label(&self) -> &'static [u8] {
-        b"quic key"
+        match self {
+            Self::V2 => b"quicv2 key",
+            _ => b"quic key",
+        }
     }
 
     pub(crate) fn iv_label(&self) -> &'static [u8] {
-        b"quic iv"
+        match self {
+            Self::V2 => b"quicv2 iv",
+            _ => b"quic iv",
+        }
     }
 
     pub(crate) fn header_key_label(&self) -> &'static [u8] {
-        b"quic hp"
+        match self {
+            Self::V2 => b"quicv2 hp",
+            _ => b"quic hp",
+        }
     }
 
     pub(crate) fn key_update_label(&self) -> &'static [u8] {
-        b"quic ku"
+        match self {
+            Self::V2 => b"quicv2 ku",
+            _ => b"quic ku",
+        }
     }
 }

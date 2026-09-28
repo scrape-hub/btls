@@ -39,6 +39,10 @@ pub(crate) struct Env {
     /// C compiler (ignored if using FIPS)
     pub(crate) cc: Option<OsString>,
     pub(crate) cxx: Option<OsString>,
+    /// NASM for native Windows builds
+    pub(crate) nasm: Option<PathBuf>,
+    /// Opt-in to building without NASM on Windows instead of failing the build.
+    pub(crate) no_asm: bool,
     pub(crate) docs_rs: bool,
 }
 
@@ -185,6 +189,8 @@ impl Env {
             // matches the `cc` crate
             cc: target_only_var("CC"),
             cxx: target_only_var("CXX"),
+            nasm: target_var("CMAKE_ASM_NASM_COMPILER").map(PathBuf::from),
+            no_asm: target_var("BORING_BSSL_NO_ASM").is_some(),
             docs_rs: var("DOCS_RS").is_some(),
         }
     }

@@ -1,0 +1,257 @@
+Adds getters for what the built-in certificate verification of an SSL uses, so
+that it can be reproduced outside the handshake, e.g. on another thread from a
+custom verify callback:
+
+- SSL_get0_verify_cert_store: the X509_STORE the SSL verifies against (its
+  verify store, or else the certificate store of its SSL_CTX).
+- SSL_CTX_get_cert_verify_callback and X509_STORE_get_verify_cb: callbacks
+  that take part in that verification. They may look up the SSL, so a
+  verification elsewhere cannot run them.
+- SSL_new_peer_chain_verify_ctx: builds the X509_STORE_CTX itself, sharing
+  ssl_crypto_x509_session_verify_cert_chain's own init_peer_verify_ctx helper
+  (extracted from it, not reimplemented) for the store/purpose/param/ECH-name
+  setup and the same callback checks as above, so a future change to the
+  built-in's setup cannot silently diverge from this. Returns NULL, queuing no
+  error, when a callback is set; the result otherwise only borrows ssl's
+  current store and chain, like X509_STORE_CTX_init itself, so a caller that
+  needs it to outlive ssl (e.g. to move verification to another thread) must
+  replace them with independently owned copies first (e.g. with
+  X509_STORE_CTX_set_chain for the chain).
+
+diff --git a/crypto/x509/x509_lu.cc b/crypto/x509/x509_lu.cc
+index 93181e0..48b4f60 100644
+--- a/crypto/x509/x509_lu.cc
++++ b/crypto/x509/x509_lu.cc
+@@ -567,6 +567,10 @@ void X509_STORE_set_verify_cb(X509_STORE *ctx,
+   ctx->verify_cb = verify_cb;
+ }
+
++X509_STORE_CTX_verify_cb X509_STORE_get_verify_cb(const X509_STORE *store) {
++  return store->verify_cb;
++}
++
+ X509_STORE *X509_STORE_CTX_get0_store(const X509_STORE_CTX *ctx) {
+   return ctx->ctx;
+ }
+diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
+index edf02b5..8c01145 100644
+--- a/include/openssl/ssl.h
++++ b/include/openssl/ssl.h
+@@ -3000,6 +3000,11 @@ OPENSSL_EXPORT void SSL_CTX_set_cert_verify_callback(
+     SSL_CTX *ctx, int (*callback)(X509_STORE_CTX *store_ctx, void *arg),
+     void *arg);
+
++// SSL_CTX_get_cert_verify_callback returns the callback set with
++// |SSL_CTX_set_cert_verify_callback|, or NULL if there is none.
++OPENSSL_EXPORT int (*SSL_CTX_get_cert_verify_callback(const SSL_CTX *ctx))(
++    X509_STORE_CTX *store_ctx, void *arg);
++
+ // SSL_enable_signed_cert_timestamps causes |ssl| (which must be the client end
+ // of a connection) to request SCTs from the server. See
+ // https://tools.ietf.org/html/rfc6962.
+@@ -3051,6 +3056,27 @@ OPENSSL_EXPORT int SSL_set0_verify_cert_store(SSL *ssl, X509_STORE *store);
+ // reference to |store| will be taken.
+ OPENSSL_EXPORT int SSL_set1_verify_cert_store(SSL *ssl, X509_STORE *store);
+
++// SSL_get0_verify_cert_store returns the |X509_STORE| that the built-in
++// certificate verification of |ssl| uses: the store set with
++// |SSL_set0_verify_cert_store| or |SSL_CTX_set0_verify_cert_store| if there is
++// one, otherwise the certificate store of |ssl|'s |SSL_CTX|. It returns NULL if
++// the configuration of |ssl| has been shed.
++OPENSSL_EXPORT X509_STORE *SSL_get0_verify_cert_store(const SSL *ssl);
++
++// SSL_new_peer_chain_verify_ctx returns a new |X509_STORE_CTX| set up to
++// verify |ssl|'s peer certificate chain exactly as the built-in verification
++// does: the same verify store, default purpose, verify parameters and ECH
++// name override. Returns NULL, queuing no error, if a verify callback is set
++// on |ssl|, its |SSL_CTX|, or the verify store (any of these may use |ssl|
++// and so cannot run where the result might be used), or if there is no peer
++// certificate chain yet; other failures return NULL with an error on the
++// queue. As with |X509_STORE_CTX_init|, the result only borrows |ssl|'s
++// current store and chain: replace them (e.g. with
++// |X509_STORE_CTX_set_chain|) with independently owned copies before using
++// the result beyond |ssl|'s own lifetime and thread. The caller owns the
++// result and must free it with |X509_STORE_CTX_free|.
++OPENSSL_EXPORT X509_STORE_CTX *SSL_new_peer_chain_verify_ctx(const SSL *ssl);
++
+ // SSL_CTX_set_verify_algorithm_prefs configures |ctx| to use |prefs| as the
+ // preference list when verifying signatures from the peer's long-term key in
+ // TLS 1.2 and up. It returns one on zero on error. |prefs| should not include
+diff --git a/include/openssl/x509.h b/include/openssl/x509.h
+index 926f365..2c37d26 100644
+--- a/include/openssl/x509.h
++++ b/include/openssl/x509.h
+@@ -5175,6 +5175,11 @@ OPENSSL_EXPORT void X509_STORE_CTX_set_verify_cb(
+ OPENSSL_EXPORT void X509_STORE_set_verify_cb(
+     X509_STORE *store, X509_STORE_CTX_verify_cb verify_cb);
+
++// X509_STORE_get_verify_cb returns the callback set with
++// |X509_STORE_set_verify_cb|, or NULL if there is none.
++OPENSSL_EXPORT X509_STORE_CTX_verify_cb
++X509_STORE_get_verify_cb(const X509_STORE *store);
++
+ // X509_STORE_set_verify_cb_func is a deprecated alias for
+ // |X509_STORE_set_verify_cb|.
+ #define X509_STORE_set_verify_cb_func(store, func) \
+diff --git a/ssl/ssl_x509.cc b/ssl/ssl_x509.cc
+index 3edd09f..f99ff6b 100644
+--- a/ssl/ssl_x509.cc
++++ b/ssl/ssl_x509.cc
+@@ -198,52 +198,67 @@ static void ssl_crypto_x509_session_clear(SSL_SESSION *session) {
+   session->x509_chain_without_leaf = nullptr;
+ }
+
+-static bool ssl_crypto_x509_session_verify_cert_chain(SSL_SESSION *session,
+-                                                      SSL_HANDSHAKE *hs,
+-                                                      uint8_t *out_alert) {
+-  *out_alert = SSL_AD_INTERNAL_ERROR;
+-  STACK_OF(X509) *const cert_chain = session->x509_chain;
+-  if (cert_chain == nullptr || sk_X509_num(cert_chain) == 0) {
+-    return false;
+-  }
+-
+-  SSL *const ssl = hs->ssl;
+-  SSL_CTX *ssl_ctx = ssl->ctx.get();
+-  X509_STORE *verify_store = ssl_ctx->cert_store;
+-  if (hs->config->cert->verify_store != nullptr) {
+-    verify_store = hs->config->cert->verify_store;
+-  }
+-
+-  X509 *leaf = sk_X509_value(cert_chain, 0);
++// init_peer_verify_ctx sets up |ctx| to verify |leaf| within |cert_chain| the
++// way the built-in verification does for |ssl|'s peer: the verify store,
++// ex_data, default purpose, verify parameters (including ECH's name
++// override) and, if set, a custom verify callback. |leaf| and |cert_chain|
++// are not copied or referenced; they, and |ssl|, must outlive |ctx|. Returns
++// false, with an error on the queue, if any step fails. Shared by
++// |ssl_crypto_x509_session_verify_cert_chain| and
++// |SSL_new_peer_chain_verify_ctx| so the two cannot silently diverge.
++static bool init_peer_verify_ctx(SSL *ssl, X509_STORE_CTX *ctx, X509 *leaf,
++                                 STACK_OF(X509) *cert_chain) {
++  X509_STORE *verify_store = SSL_get0_verify_cert_store(ssl);
+   const char *name;
+   size_t name_len;
+   SSL_get0_ech_name_override(ssl, &name, &name_len);
+-  UniquePtr<X509_STORE_CTX> ctx(X509_STORE_CTX_new());
+-  if (!ctx ||                                                             //
+-      !X509_STORE_CTX_init(ctx.get(), verify_store, leaf, cert_chain) ||  //
++  if (!X509_STORE_CTX_init(ctx, verify_store, leaf, cert_chain) ||  //
+       !X509_STORE_CTX_set_ex_data(
+-          ctx.get(), SSL_get_ex_data_X509_STORE_CTX_idx(), ssl) ||  //
++          ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl) ||  //
+       // We need to inherit the verify parameters. These can be determined by
+       // the context: if its a server it will verify SSL client certificates or
+       // vice versa.
+       !X509_STORE_CTX_set_default(
+-          ctx.get(),
+-          ssl->server ? "ssl_client" : "ssl_server") ||  //
++          ctx, ssl->server ? "ssl_client" : "ssl_server") ||  //
+       // Anything non-default in "param" should overwrite anything in the ctx.
+-      !X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(ctx.get()),
+-                              hs->config->param) ||  //
++      !X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(ctx),
++                              ssl->config->param) ||  //
+       // ClientHelloOuter connections use a different name.
+       (name_len != 0 &&  //
+-       !X509_VERIFY_PARAM_set1_host(X509_STORE_CTX_get0_param(ctx.get()), name,
++       !X509_VERIFY_PARAM_set1_host(X509_STORE_CTX_get0_param(ctx), name,
+                                     name_len))) {
+     OPENSSL_PUT_ERROR(SSL, ERR_R_X509_LIB);
+     return false;
+   }
+
+-  if (hs->config->verify_callback) {
+-    X509_STORE_CTX_set_verify_cb(ctx.get(), hs->config->verify_callback);
++  if (ssl->config->verify_callback) {
++    X509_STORE_CTX_set_verify_cb(ctx, ssl->config->verify_callback);
++  }
++
++  return true;
++}
++
++static bool ssl_crypto_x509_session_verify_cert_chain(SSL_SESSION *session,
++                                                      SSL_HANDSHAKE *hs,
++                                                      uint8_t *out_alert) {
++  *out_alert = SSL_AD_INTERNAL_ERROR;
++  STACK_OF(X509) *const cert_chain = session->x509_chain;
++  if (cert_chain == nullptr || sk_X509_num(cert_chain) == 0) {
++    return false;
++  }
++
++  SSL *const ssl = hs->ssl;
++  X509 *leaf = sk_X509_value(cert_chain, 0);
++  UniquePtr<X509_STORE_CTX> ctx(X509_STORE_CTX_new());
++  if (!ctx) {
++    OPENSSL_PUT_ERROR(SSL, ERR_R_X509_LIB);
++    return false;
++  }
++  if (!init_peer_verify_ctx(ssl, ctx.get(), leaf, cert_chain)) {
++    return false;
+   }
+
++  SSL_CTX *ssl_ctx = ssl->ctx.get();
+   int verify_ret;
+   if (ssl_ctx->app_verify_callback != nullptr) {
+     verify_ret =
+@@ -521,6 +536,12 @@ void SSL_CTX_set_cert_verify_callback(
+   ctx->app_verify_arg = arg;
+ }
+
++int (*SSL_CTX_get_cert_verify_callback(const SSL_CTX *ctx))(
++    X509_STORE_CTX *store_ctx, void *arg) {
++  check_ssl_ctx_x509_method(ctx);
++  return ctx->app_verify_callback;
++}
++
+ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode,
+                         int (*cb)(int, X509_STORE_CTX *)) {
+   check_ssl_ctx_x509_method(ctx);
+@@ -1086,6 +1107,48 @@ int SSL_set1_verify_cert_store(SSL *ssl, X509_STORE *store) {
+   return set_cert_store(&ssl->config->cert->verify_store, store, 1);
+ }
+
++X509_STORE *SSL_get0_verify_cert_store(const SSL *ssl) {
++  check_ssl_x509_method(ssl);
++  if (!ssl->config) {
++    return nullptr;
++  }
++  // This is the store |init_peer_verify_ctx| uses too.
++  if (ssl->config->cert->verify_store != nullptr) {
++    return ssl->config->cert->verify_store;
++  }
++  return ssl->ctx->cert_store;
++}
++
++X509_STORE_CTX *SSL_new_peer_chain_verify_ctx(const SSL *ssl) {
++  check_ssl_x509_method(ssl);
++  X509_STORE *verify_store = SSL_get0_verify_cert_store(ssl);
++  if (verify_store == nullptr ||
++      SSL_get_verify_callback(ssl) != nullptr ||
++      SSL_CTX_get_cert_verify_callback(ssl->ctx.get()) != nullptr ||
++      X509_STORE_get_verify_cb(verify_store) != nullptr) {
++    // Any of these may use |ssl| and so cannot run where the result might be
++    // used.
++    return nullptr;
++  }
++
++  STACK_OF(X509) *cert_chain = SSL_get_peer_full_cert_chain(ssl);
++  if (cert_chain == nullptr || sk_X509_num(cert_chain) == 0) {
++    return nullptr;
++  }
++
++  UniquePtr<X509_STORE_CTX> ctx(X509_STORE_CTX_new());
++  if (!ctx) {
++    OPENSSL_PUT_ERROR(SSL, ERR_R_X509_LIB);
++    return nullptr;
++  }
++  if (!init_peer_verify_ctx(const_cast<SSL *>(ssl), ctx.get(),
++                           sk_X509_value(cert_chain, 0), cert_chain)) {
++    return nullptr;
++  }
++
++  return ctx.release();
++}
++
+ int SSL_set1_host(SSL *ssl, const char *hostname) {
+   check_ssl_x509_method(ssl);
+   if (!ssl->config) {

@@ -1,5 +1,6 @@
 
 Unreleased
+- 2026-09-28 Add browser fingerprint support to BoringSSL and the btls crates
 - 2026-02-23 build(deps): bump actions/cache from 4 to 5 (#121)
 - 2026-02-23 build(deps): bump actions/checkout from 4 to 6 (#122)
 - 2026-02-23 build(deps): bump KyleMayes/install-llvm-action from 1 to 2 (#123)

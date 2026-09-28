@@ -1,5 +1,6 @@
 use core::panic;
 use fslock::LockFile;
+use std::env;
 use std::ffi::OsString;
 use std::fs;
 use std::io;
@@ -204,6 +205,92 @@ fn msvc_lib_subdir(config: &Config) -> Option<&'static str> {
     }
 }
 
+/// Chooses how a native Windows build with MSVC assembles BoringSSL's assembly.
+///
+/// On x86 and x86_64 BoringSSL uses NASM, and its CMakeLists.txt fails without it. Pass the
+/// assembler found where CMake itself looks, so that its choice is visible here. Without NASM,
+/// fail the build the way upstream does, unless `BORING_BSSL_NO_ASM` opts into building without
+/// assembly instead: AES-GCM and SHA-2 are then many times slower. On other architectures the
+/// assembly is in GNU syntax, which clang-cl assembles but MSVC does not.
+fn configure_windows_asm(config: &Config, cmake: &mut cmake::Config) {
+    match config.target_arch.as_str() {
+        "x86_64" | "x86" => match find_nasm(config) {
+            Some(nasm) => {
+                cmake.define("CMAKE_ASM_NASM_COMPILER", nasm);
+            }
+            None if config.env.no_asm => {
+                println!(
+                    "cargo:warning=NASM not found: building BoringSSL without assembly, which \
+                     makes AES-GCM and SHA-2 many times slower. Install NASM \
+                     (https://www.nasm.us/) or set CMAKE_ASM_NASM_COMPILER to nasm.exe, then \
+                     run cargo clean -p btls-sys."
+                );
+                cmake.define("OPENSSL_NO_ASM", "YES");
+            }
+            None => {
+                panic!(
+                    "NASM not found: BoringSSL's CMakeLists.txt requires it to assemble AES-GCM \
+                     and SHA-2 on Windows x86/x86_64. Install NASM (https://www.nasm.us/) or set \
+                     CMAKE_ASM_NASM_COMPILER to nasm.exe. To build without assembly instead (much \
+                     slower AES-GCM/SHA-2), set BORING_BSSL_NO_ASM."
+                );
+            }
+        },
+        _ => {
+            let clang = config
+                .env
+                .cc
+                .as_ref()
+                .is_some_and(|cc| cc.to_string_lossy().contains("clang"));
+            if !clang {
+                cmake.define("OPENSSL_NO_ASM", "YES");
+            }
+        }
+    }
+}
+
+/// NASM from `CMAKE_ASM_NASM_COMPILER`, on the `PATH`, or in the directories CMake searches.
+fn find_nasm(config: &Config) -> Option<PathBuf> {
+    if let Some(nasm) = &config.env.nasm {
+        return Some(nasm.clone());
+    }
+    let path_dirs = env::var_os("PATH")
+        .map(|path| env::split_paths(&path).collect::<Vec<_>>())
+        .unwrap_or_default();
+    // As CMakeDetermineASM_NASMCompiler.cmake.
+    let install_dirs = ["ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"]
+        .into_iter()
+        .filter_map(env::var_os)
+        .map(|dir| PathBuf::from(dir).join("NASM"));
+    path_dirs
+        .into_iter()
+        .chain(install_dirs)
+        .map(|dir| dir.join("nasm.exe"))
+        .find(|nasm| nasm.is_file())
+}
+
+/// Sets the per-configuration compiler flags of an MSVC build to CMake's defaults.
+///
+/// When it picks the Visual Studio generator itself, cmake-rs sets `CMAKE_<LANG>_FLAGS_<CONFIG>`
+/// of the build type to the flags of the `cc` crate without their optimization flags, so every
+/// configuration, Release included, would compile at MSVC's default /Od
+/// (<https://github.com/rust-lang/cmake-rs/issues/240>). It leaves these variables alone once
+/// they are defined. Debug is built without debug information; RelWithDebInfo keeps it in the
+/// objects (/Z7 rather than CMake's /Zi), so that it ends up in the static libraries.
+fn set_msvc_config_flags(cmake: &mut cmake::Config) {
+    const FLAGS: [(&str, &str); 4] = [
+        ("DEBUG", "/Ob0 /Od"),
+        ("RELEASE", "/O2 /Ob2 /DNDEBUG"),
+        ("MINSIZEREL", "/O1 /Ob1 /DNDEBUG"),
+        ("RELWITHDEBINFO", "/Z7 /O2 /Ob1 /DNDEBUG"),
+    ];
+    for lang in ["C", "CXX"] {
+        for (build_type, flags) in FLAGS {
+            cmake.define(format!("CMAKE_{lang}_FLAGS_{build_type}"), flags);
+        }
+    }
+}
+
 /// Returns a new `cmake::Config` for building BoringSSL.
 ///
 /// It will add platform-specific parameters if needed.
@@ -225,9 +312,16 @@ fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
         } else {
             boringssl_cmake.define("CMAKE_MSVC_RUNTIME_LIBRARY", "MultiThreadedDLL");
         }
+
+        if config.target_env == "msvc" {
+            set_msvc_config_flags(&mut boringssl_cmake);
+        }
     }
 
     if config.host == config.target {
+        if config.target_os == "windows" && config.target_env == "msvc" {
+            configure_windows_asm(config, &mut boringssl_cmake);
+        }
         return boringssl_cmake;
     }
 
@@ -310,12 +404,10 @@ fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
             boringssl_cmake.cflag(&cflag);
         }
 
-        "windows" => {
-            if config.host.contains("windows") {
-                // BoringSSL's CMakeLists.txt isn't set up for cross-compiling using Visual Studio.
-                // Disable assembly support so that it at least builds.
-                boringssl_cmake.define("OPENSSL_NO_ASM", "YES");
-            }
+        "windows" if config.host.contains("windows") => {
+            // BoringSSL's CMakeLists.txt isn't set up for cross-compiling using Visual Studio.
+            // Disable assembly support so that it at least builds.
+            boringssl_cmake.define("OPENSSL_NO_ASM", "YES");
         }
 
         "linux" => match &*config.target_arch {
@@ -474,6 +566,39 @@ fn ensure_patches_applied(config: &Config) -> io::Result<()> {
     println!("cargo:warning=applying patch to boringssl");
     apply_patch(config, "boringssl.patch")?;
 
+    // The patches from here to quic-ech-outer-transport-params.patch are stacked: each applies on
+    // top of the ones before it, in this order, and several change the same files (ssl.h,
+    // extensions.cc, internal.h, ssl_lib.cc, ssl_privkey.cc; their `index` lines chain). When one
+    // of them is dropped, e.g. the grease-sigalgs.patch or server-padding.patch backport once the
+    // BoringSSL submodule contains the change, regenerate the ones after it on the new tree, in
+    // this order.
+    println!("cargo:warning=applying ML-DSA verify prefs patch to boringssl");
+    apply_patch(config, "mldsa-verify-prefs.patch")?;
+
+    println!("cargo:warning=applying signature_algorithms GREASE patch to boringssl");
+    apply_patch(config, "grease-sigalgs.patch")?;
+
+    println!("cargo:warning=applying TLS 1.3 legacy extensions patch to boringssl");
+    apply_patch(config, "tls13-legacy-extensions.patch")?;
+
+    println!("cargo:warning=applying extension order tail patch to boringssl");
+    apply_patch(config, "extension-order-tail.patch")?;
+
+    println!("cargo:warning=applying ECH GREASE parameters patch to boringssl");
+    apply_patch(config, "ech-grease-params.patch")?;
+
+    println!("cargo:warning=applying delegated credential prefs patch to boringssl");
+    apply_patch(config, "delegated-credential-prefs.patch")?;
+
+    println!("cargo:warning=applying verify cert store getters patch to boringssl");
+    apply_patch(config, "verify-cert-store-getters.patch")?;
+
+    println!("cargo:warning=applying server padding patch to boringssl");
+    apply_patch(config, "server-padding.patch")?;
+
+    println!("cargo:warning=applying QUIC ECH outer transport params patch to boringssl");
+    apply_patch(config, "quic-ech-outer-transport-params.patch")?;
+
     println!("cargo:warning=applying loongarch patch to boringssl");
     apply_patch(config, "boringssl-loongarch.patch")?;
 
@@ -601,6 +726,8 @@ fn get_cpp_runtime_lib(config: &Config) -> Option<String> {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=patches");
+
     let config = Config::from_env();
     ensure_patches_applied(&config).unwrap();
     if !config.env.docs_rs {

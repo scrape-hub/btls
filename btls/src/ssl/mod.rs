@@ -82,13 +82,12 @@ use crate::ec::EcKeyRef;
 use crate::error::ErrorStack;
 use crate::ex_data::Index;
 use crate::hmac::HmacCtxRef;
+use crate::hpke::HpkeAead;
 use crate::nid::Nid;
 use crate::pkey::{HasPrivate, PKeyRef, Params, Private};
 use crate::srtp::{SrtpProtectionProfile, SrtpProtectionProfileRef};
 use crate::ssl::bio::BioMethod;
 use crate::ssl::callbacks::*;
-#[cfg(not(feature = "fips"))]
-use crate::ssl::ech::SslEchKeys;
 use crate::ssl::error::InnerError;
 use crate::stack::{Stack, StackRef, Stackable};
 use crate::symm::CipherCtxRef;
@@ -106,15 +105,17 @@ pub use self::async_callbacks::{
     BoxCustomVerifyFuture, BoxGetSessionFinish, BoxGetSessionFuture, BoxPrivateKeyMethodFinish,
     BoxPrivateKeyMethodFuture, BoxSelectCertFinish, BoxSelectCertFuture, ExDataFuture,
 };
+pub use self::async_verify::VerifyJob;
 pub use self::connector::{
     ConnectConfiguration, SslAcceptor, SslAcceptorBuilder, SslConnector, SslConnectorBuilder,
 };
 #[cfg(feature = "credential")]
 pub use self::credential::{SslCredential, SslCredentialBuilder, SslCredentialRef};
-pub use self::ech::SslEchKeysRef;
+pub use self::ech::{SslEchKeys, SslEchKeysBuilder, SslEchKeysRef};
 pub use self::error::{Error, ErrorCode, HandshakeError};
 
 mod async_callbacks;
+mod async_verify;
 mod bio;
 mod callbacks;
 mod connector;
@@ -1983,6 +1984,17 @@ impl SslContextBuilder {
         unsafe { ffi::SSL_CTX_set_grease_enabled(self.as_ptr(), enabled as _) }
     }
 
+    /// Sets whether the context should send a GREASE value (RFC 8701) as the first entry of
+    /// the ClientHello's `signature_algorithms` extension.
+    ///
+    /// This is independent of [`Self::set_grease_enabled`]. The value is drawn from the same
+    /// per-connection GREASE seed as the other GREASE values, so it stays the same when the
+    /// ClientHello is sent again after a HelloRetryRequest.
+    #[corresponds(SSL_CTX_set_grease_sigalgs_enabled)]
+    pub fn set_grease_sigalgs_enabled(&mut self, enabled: bool) {
+        unsafe { ffi::SSL_CTX_set_grease_sigalgs_enabled(self.as_ptr(), enabled as _) }
+    }
+
     /// Sets whether the context should enable record size limit.
     #[corresponds(SSL_CTX_set_record_size_limit)]
     pub fn set_record_size_limit(&mut self, limit: u16) {
@@ -2054,6 +2066,62 @@ impl SslContextBuilder {
         unsafe { ffi::SSL_CTX_set_permute_extensions(self.as_ptr(), enabled as _) }
     }
 
+    /// Sets whether a client sends the extended_master_secret and renegotiation_info extensions
+    /// in a ClientHello that only offers TLS 1.3.
+    ///
+    /// Both have no effect in TLS 1.3 and are omitted by default, but NSS (Firefox) always sends
+    /// them, also over QUIC.
+    #[corresponds(SSL_CTX_set_tls13_legacy_extensions)]
+    pub fn set_tls13_legacy_extensions(&mut self, enabled: bool) {
+        unsafe { ffi::SSL_CTX_set_tls13_legacy_extensions(self.as_ptr(), enabled as _) }
+    }
+
+    /// Sets extensions that a client sends last in the ClientHello, in the given order.
+    ///
+    /// All other extensions come first, in the order that results from
+    /// [`Self::set_extension_permutation`], [`Self::set_permute_extensions`] or the default one,
+    /// so a permutation is still drawn for every connection. Only the GREASE, padding and
+    /// pre_shared_key extensions follow the tail. Unknown extensions are ignored, an empty slice
+    /// removes the tail.
+    ///
+    /// NSS (Firefox) permutes its QUIC ClientHello extensions but always ends with
+    /// [`ExtensionType::QUIC_TRANSPORT_PARAMETERS_STANDARD`] and
+    /// [`ExtensionType::ENCRYPTED_CLIENT_HELLO`].
+    #[corresponds(SSL_CTX_set_extension_order_tail)]
+    pub fn set_extension_order_tail(
+        &mut self,
+        extensions: &[ExtensionType],
+    ) -> Result<(), ErrorStack> {
+        unsafe {
+            cvt_0i(ffi::SSL_CTX_set_extension_order_tail(
+                self.as_ptr(),
+                extensions.as_ptr().cast(),
+                extensions.len(),
+            ))
+            .map(|_| ())
+        }
+    }
+
+    /// Sets the signature algorithms a client announces in the delegated_credential extension.
+    ///
+    /// Unlike [`Self::set_delegated_credentials`], this takes code points and keeps algorithms
+    /// BoringSSL does not implement, such as the ML-DSA schemes NSS (Firefox) announces. An
+    /// empty slice turns the extension off.
+    #[corresponds(SSL_CTX_set_delegated_credential_algorithm_prefs)]
+    pub fn set_delegated_credential_algorithm_prefs(
+        &mut self,
+        prefs: &[SslSignatureAlgorithm],
+    ) -> Result<(), ErrorStack> {
+        unsafe {
+            cvt_0i(ffi::SSL_CTX_set_delegated_credential_algorithm_prefs(
+                self.as_ptr(),
+                prefs.as_ptr().cast(),
+                prefs.len(),
+            ))
+            .map(|_| ())
+        }
+    }
+
     /// Sets the context's supported signature verification algorithms.
     #[corresponds(SSL_CTX_set_verify_algorithm_prefs)]
     pub fn set_verify_algorithm_prefs(
@@ -2062,6 +2130,27 @@ impl SslContextBuilder {
     ) -> Result<(), ErrorStack> {
         unsafe {
             cvt_0i(ffi::SSL_CTX_set_verify_algorithm_prefs(
+                self.as_ptr(),
+                prefs.as_ptr().cast(),
+                prefs.len(),
+            ))
+            .map(|_| ())
+        }
+    }
+
+    /// Sets the context's supported signature verification algorithms, advertised as-is.
+    ///
+    /// Unlike [`Self::set_verify_algorithm_prefs`], this keeps algorithms BoringSSL does not
+    /// implement, such as the ML-DSA schemes Chromium 150+ advertises. An algorithm kept this way
+    /// can never actually be selected: `tls12_check_peer_sigalg` independently requires that the
+    /// peer's choice be supported by the key.
+    #[corresponds(SSL_CTX_set_advertised_verify_algorithm_prefs)]
+    pub fn set_advertised_verify_algorithm_prefs(
+        &mut self,
+        prefs: &[SslSignatureAlgorithm],
+    ) -> Result<(), ErrorStack> {
+        unsafe {
+            cvt_0i(ffi::SSL_CTX_set_advertised_verify_algorithm_prefs(
                 self.as_ptr(),
                 prefs.as_ptr().cast(),
                 prefs.len(),
@@ -3491,11 +3580,23 @@ impl SslRef {
     }
 
     /// Returns the certificate verification result.
+    ///
+    /// After a verification with [`SslContextBuilder::set_async_default_verify`] failed, this is
+    /// its result, as with the built-in verification, rather than the
+    /// [`X509VerifyError::APPLICATION_VERIFICATION`] that `SSL_get_verify_result` reports for it.
     #[corresponds(SSL_get_verify_result)]
     pub fn verify_result(&self) -> X509VerifyResult {
         self.ssl_context().check_x509();
 
-        unsafe { X509VerifyError::from_raw(ffi::SSL_get_verify_result(self.as_ptr()) as c_int) }
+        let result = unsafe {
+            X509VerifyError::from_raw(ffi::SSL_get_verify_result(self.as_ptr()) as c_int)
+        };
+        match result {
+            Err(X509VerifyError::APPLICATION_VERIFICATION) => {
+                async_verify::verify_error(self).map_or(result, Err)
+            }
+            _ => result,
+        }
     }
 
     /// Returns a shared reference to the SSL session.
@@ -3790,6 +3891,25 @@ impl SslRef {
         }
     }
 
+    /// Configures a distinct `quic_transport_parameters` extension value
+    /// sent only in the ClientHelloOuter of a split Encrypted Client Hello,
+    /// instead of the one set for the real (inner) handshake. Some QUIC
+    /// stacks (Firefox's neqo) send a reduced set there, since the outer is
+    /// only ever a fallback the server completes if it rejects the real,
+    /// encrypted hello. Has no effect unless ECH sends a split
+    /// ClientHelloOuter/Inner.
+    #[corresponds(SSL_set_quic_transport_params_outer)]
+    pub fn set_quic_transport_params_outer(&mut self, params: &[u8]) -> Result<(), ErrorStack> {
+        unsafe {
+            cvt_0i(ffi::SSL_set_quic_transport_params_outer(
+                self.as_ptr(),
+                params.as_ptr(),
+                params.len(),
+            ))
+            .map(|_| ())
+        }
+    }
+
     /// This function returns a serialized `ECHConfigList` as provided by the
     /// server, if one exists.
     ///
@@ -3849,6 +3969,50 @@ impl SslRef {
         unsafe {
             ffi::SSL_set_enable_ech_grease(self.as_ptr(), enable);
         }
+    }
+
+    /// Sets the HPKE AEAD that a GREASE ECH extension announces.
+    ///
+    /// By default BoringSSL announces AES-128-GCM if the CPU has AES instructions and
+    /// ChaCha20-Poly1305 otherwise. Fails for AEADs BoringSSL does not support for ECH.
+    #[corresponds(SSL_set_ech_grease_aead)]
+    pub fn set_ech_grease_aead(&mut self, aead: HpkeAead) -> Result<(), ErrorStack> {
+        unsafe { cvt_0i(ffi::SSL_set_ech_grease_aead(self.as_ptr(), aead.as_raw())).map(|_| ()) }
+    }
+
+    /// Sets the length of the payload field of a GREASE ECH extension, including the AEAD tag.
+    ///
+    /// Zero, the default, draws a random length for every connection: 128, 160, 192 or 224
+    /// bytes plus the tag, as Chrome does. NSS (Firefox) instead sizes the payload like the
+    /// ClientHelloInner it would send, so it grows when the ClientHello offers a session.
+    #[corresponds(SSL_set_ech_grease_payload_len)]
+    pub fn set_ech_grease_payload_len(&mut self, len: u16) {
+        unsafe { ffi::SSL_set_ech_grease_payload_len(self.as_ptr(), len) }
+    }
+
+    /// Asks the server, as a client, for `num_bytes` of padding in its EncryptedExtensions
+    /// (TLS 1.3 only), with the server_padding extension (0x12e0, not IANA-assigned). Chrome
+    /// sends it, over TCP and QUIC, while its Finch feature `AddTLSServerHandshakePadding` is on.
+    ///
+    /// A server that answers must send exactly `num_bytes`, else the handshake fails.
+    #[corresponds(SSL_set_server_padding_request)]
+    pub fn set_server_padding_request(&mut self, num_bytes: u16) {
+        unsafe { ffi::SSL_set_server_padding_request(self.as_ptr(), num_bytes) }
+    }
+
+    /// Answers the server_padding extension, as a server, with the padding the client asks
+    /// for, up to 16 KiB. Off by default.
+    #[corresponds(SSL_set_server_padding_enabled)]
+    pub fn set_server_padding_enabled(&mut self, enabled: bool) {
+        unsafe { ffi::SSL_set_server_padding_enabled(self.as_ptr(), c_int::from(enabled)) }
+    }
+
+    /// Whether the server sent the padding requested with
+    /// [`set_server_padding_request`](Self::set_server_padding_request).
+    #[corresponds(SSL_server_sent_requested_padding)]
+    #[must_use]
+    pub fn server_sent_requested_padding(&self) -> bool {
+        unsafe { ffi::SSL_server_sent_requested_padding(self.as_ptr()) == 1 }
     }
 
     /// Sets the compliance policy on `SSL`.

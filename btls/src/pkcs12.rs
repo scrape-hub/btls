@@ -241,14 +241,14 @@ mod test {
 
         assert_eq!(
             hex::encode(parsed.cert.digest(MessageDigest::sha1()).unwrap()),
-            "59172d9313e84459bcff27f967e79e6e9217e584"
+            "d93f662e138c72f171a50d92eddb235adf5f88ba"
         );
 
         let chain = parsed.chain.unwrap();
         assert_eq!(chain.len(), 1);
         assert_eq!(
             hex::encode(chain[0].digest(MessageDigest::sha1()).unwrap()),
-            "c0cbdf7cdd03c9773e5468e1f6d2da7d5cbb1875"
+            "40ce31c9fb1f2ae0c0068b6bed8ac7760d7e85bd"
         );
     }
 

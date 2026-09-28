@@ -30,6 +30,11 @@ btls-sys = { workspace = true }
 bytes = "1"
 foreign-types-shared = "0.3"
 lru = "0.16"
+# These crates.io versions alone do not build this crate: quinn-btls's `crypto::Session`
+# implementation needs the scrape-hub/quinn fork's `poll_handshake`/`set_version` additions to
+# quinn-proto, applied through this workspace's root `[patch.crates-io]`. A consumer who takes only
+# this crate's declared dependencies (without also applying that patch) gets a compile error, not
+# just a stale build.
 quinn = { version = "0.11.9", default-features = false }
 quinn-proto = { version = "0.11.13", default-features = false }
 rand = "0.10.0"
@@ -48,6 +53,7 @@ tokio = { version = "1", features = [
     "rt-multi-thread",
     "time",
     "macros",
+    "net",
     "sync",
 ] }
 tracing-subscriber = { version = "0.3", default-features = false, features = [

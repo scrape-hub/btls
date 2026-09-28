@@ -63,10 +63,12 @@ impl From<Error> for crypto::CryptoError {
 impl From<Error> for ConnectError {
     fn from(e: Error) -> Self {
         match e {
-            Error::SslError(_) => Self::EndpointStopping,
-            Error::IoError(_) => Self::EndpointStopping,
+            // Already a specific ConnectError (e.g. an invalid server name): keep it as is.
             Error::ConnectError(e) => e,
-            Error::TransportError(_) => Self::EndpointStopping,
+            // Everything else (a rejected client hello, a connection-configuration callback's own
+            // I/O error, a transport-parameter error) keeps its real message instead of collapsing
+            // to a generic EndpointStopping, which the caller could otherwise not act on or report.
+            e => Self::CryptoConfig(e.to_string()),
         }
     }
 }

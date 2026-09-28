@@ -1,0 +1,90 @@
+Adds SSL_CTX_set_advertised_verify_algorithm_prefs / SSL_set_advertised_verify_algorithm_prefs:
+the signature-algorithm preference list for verifying the peer's long-term
+key, as code points, including ones this library cannot verify (e.g. Chromium
+150+'s ML-DSA schemes). Unreachable via selection: tls12_check_peer_sigalg
+independently requires key support for whichever algorithm the peer picks.
+SSL_(CTX_)set_verify_algorithm_prefs itself keeps rejecting unknown code
+points, matching upstream and its sibling delegated-credential-prefs.patch's
+shape (a new opt-in function, not a behavior change to an existing one).
+
+diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
+index dd81949..a7d2e6f 100644
+--- a/include/openssl/ssl.h
++++ b/include/openssl/ssl.h
+@@ -3071,6 +3071,21 @@ OPENSSL_EXPORT int SSL_set_verify_algorithm_prefs(SSL *ssl,
+                                                   const uint16_t *prefs,
+                                                   size_t num_prefs);
+
++// SSL_CTX_set_advertised_verify_algorithm_prefs behaves like
++// |SSL_CTX_set_verify_algorithm_prefs|, except it keeps algorithms this
++// library does not implement, such as the ML-DSA schemes Chromium 150+
++// advertises. Unlike |SSL_CTX_set_verify_algorithm_prefs|, an algorithm kept
++// this way can never actually be selected: |tls12_check_peer_sigalg|
++// independently requires that the peer's choice be supported by the key. It
++// returns one on success and zero on error.
++OPENSSL_EXPORT int SSL_CTX_set_advertised_verify_algorithm_prefs(
++    SSL_CTX *ctx, const uint16_t *prefs, size_t num_prefs);
++
++// SSL_set_advertised_verify_algorithm_prefs behaves like
++// |SSL_CTX_set_advertised_verify_algorithm_prefs| but configures |ssl| only.
++OPENSSL_EXPORT int SSL_set_advertised_verify_algorithm_prefs(
++    SSL *ssl, const uint16_t *prefs, size_t num_prefs);
++
+
+ // Certificate authorities.
+ //
+diff --git a/ssl/ssl_privkey.cc b/ssl/ssl_privkey.cc
+index 926d2c0..6a71110 100644
+--- a/ssl/ssl_privkey.cc
++++ b/ssl/ssl_privkey.cc
+@@ -553,7 +553,8 @@ int SSL_is_signature_algorithm_rsa_pss(uint16_t sigalg) {
+ //   return true;
+ // }
+
+-static bool set_sigalg_prefs(Array<uint16_t> *out, Span<const uint16_t> prefs) {
++static bool set_sigalg_prefs(Array<uint16_t> *out, Span<const uint16_t> prefs,
++                             bool allow_unknown = false) {
+   //  Remove the uniqueness check. Older Safari versions (15)
+   // send out duplicated algorithm prefs.
+
+@@ -575,7 +576,14 @@ static bool set_sigalg_prefs(Array<uint16_t> *out, Span<const uint16_t> prefs) {
+       // abstraction.
+       continue;
+     }
+-    if (get_signature_algorithm(pref) == nullptr) {
++    // Unknown code points are kept when |allow_unknown| is set. Verify prefs are
++    // only advertised in signature_algorithms, and browsers announce algorithms
++    // this library cannot verify — Chromium 150+ sends the ML-DSA schemes from
++    // draft-ietf-tls-mldsa. Rejecting them would make the ClientHello
++    // distinguishable. An unknown algorithm can never actually be selected:
++    // |tls12_check_peer_sigalg| independently requires that the peer's choice be
++    // supported by the key.
++    if (get_signature_algorithm(pref) == nullptr && !allow_unknown) {
+       OPENSSL_PUT_ERROR(SSL, SSL_R_INVALID_SIGNATURE_ALGORITHM);
+       return false;
+     }
+@@ -920,6 +928,24 @@ int SSL_set_verify_algorithm_prefs(SSL *ssl, const uint16_t *prefs,
+   return set_sigalg_prefs(&ssl->config->verify_sigalgs, Span(prefs, num_prefs));
+ }
+
++int SSL_CTX_set_advertised_verify_algorithm_prefs(SSL_CTX *ctx,
++                                                  const uint16_t *prefs,
++                                                  size_t num_prefs) {
++  return set_sigalg_prefs(&ctx->verify_sigalgs, Span(prefs, num_prefs),
++                          /*allow_unknown=*/true);
++}
++
++int SSL_set_advertised_verify_algorithm_prefs(SSL *ssl, const uint16_t *prefs,
++                                              size_t num_prefs) {
++  if (!ssl->config) {
++    OPENSSL_PUT_ERROR(SSL, ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
++    return 0;
++  }
++
++  return set_sigalg_prefs(&ssl->config->verify_sigalgs, Span(prefs, num_prefs),
++                          /*allow_unknown=*/true);
++}
++
+ int SSL_CTX_set_delegated_credentials(SSL_CTX *ctx, const char *str) {
+    if (!ctx) {
+     OPENSSL_PUT_ERROR(SSL, ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);

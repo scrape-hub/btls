@@ -3,8 +3,8 @@ use crate::bffi_ext::QuicSslContext;
 use crate::error::{map_result, Result};
 use crate::session_state::{SessionState, QUIC_METHOD};
 use crate::version::QuicVersion;
-use crate::{Entry, QuicSsl, QuicSslSession, SessionCache, SimpleCache};
-use btls::ssl::{Ssl, SslContext, SslContextBuilder, SslMethod, SslSession, SslVersion};
+use crate::{session_cache_key, Entry, QuicSsl, QuicSslSession, SessionCache, SimpleCache};
+use btls::ssl::{Ssl, SslContext, SslContextBuilder, SslMethod, SslRef, SslSession, SslVersion};
 use btls_sys as bffi;
 use bytes::{Bytes, BytesMut};
 use foreign_types_shared::ForeignType;
@@ -18,12 +18,35 @@ use std::io::Cursor;
 use std::result::Result as StdResult;
 use std::sync::Arc;
 use std::sync::LazyLock;
+use std::task::{Poll, Waker};
 use tracing::{trace, warn};
 
+/// A callback that configures the [SslRef] of a new client connection, see
+/// [Config::set_configure_connection_callback]. The [TransportParameters]
+/// are the real (inner) ones this connection already offers, for a callback
+/// that also needs [SslRef::set_quic_transport_params_outer]: a reduced
+/// set for a ClientHelloOuter is usually filtered from these, not built
+/// separately.
+type ConfigureConnection =
+    dyn Fn(&mut SslRef, &str, &TransportParameters) -> Result<()> + Send + Sync;
+
 /// Configuration for a client-side QUIC. Wraps around a BoringSSL [SslContext].
+///
+/// Certificate verification can run on another thread: set it up with
+/// [SslContextBuilder::set_async_default_verify] on the builder for [Config::from_builder], or on
+/// each connection's [SslRef] in [Config::set_configure_connection_callback]. While it runs, the
+/// session has no handshake data to send, so quinn only acknowledges the server's packets, and
+/// [crypto::Session::poll_handshake] is `Pending`. Once it is done, the verification wakes the
+/// connection, and the Finished goes out at once.
+///
+/// QUIC versions 1 and 2 (RFC 9369) are supported, and a session follows a server that switches
+/// the connection to the other one (compatible version negotiation, RFC 9368) through
+/// [crypto::Session::set_version]. Session tickets are kept per version, see
+/// [session_cache_key](crate::session_cache_key).
 pub struct Config {
     ctx: SslContext,
     session_cache: Arc<dyn SessionCache>,
+    configure_connection: Option<Box<ConfigureConnection>>,
 }
 
 impl Config {
@@ -35,6 +58,28 @@ impl Config {
         builder.set_max_proto_version(Some(SslVersion::TLS1_3))?;
 
         builder.set_default_verify_paths()?;
+
+        let mut config = Self::from_builder(builder)?;
+        // Only this constructor's own, freshly-built context defaults to
+        // verifying the server; from_builder leaves whatever the caller's
+        // builder already configured alone.
+        config.ctx.verify_peer(true);
+        Ok(config)
+    }
+
+    /// Create a QUIC client config from a pre-configured [SslContextBuilder].
+    ///
+    /// The caller is responsible for setting TLS parameters on the builder
+    /// (cipher list, curves, sigalgs, certificate verification, cert compression, etc.)
+    /// before passing it here. This constructor enforces TLS 1.3 and applies
+    /// QUIC-specific settings (ALPN, session cache, QUIC method callbacks, early data).
+    ///
+    /// This is useful when custom root certificates are needed, e.g. on Windows, where BoringSSL
+    /// finds no system CA store, or when each configuration needs its own TLS parameters.
+    pub fn from_builder(mut builder: SslContextBuilder) -> Result<Self> {
+        // QUIC requires TLS 1.3.
+        builder.set_min_proto_version(Some(SslVersion::TLS1_3))?;
+        builder.set_max_proto_version(Some(SslVersion::TLS1_3))?;
 
         // We build the context early, since we are not allowed to further mutate the context
         // in start_session.
@@ -55,12 +100,10 @@ impl Config {
         ctx.set_quic_method(&QUIC_METHOD)?;
         ctx.set_info_callback(Some(SessionState::info_callback));
 
-        // For clients, verification of the server is on by default.
-        ctx.verify_peer(true);
-
         Ok(Self {
             ctx,
             session_cache: Arc::new(SimpleCache::new(256)),
+            configure_connection: None,
         })
     }
 
@@ -104,6 +147,29 @@ impl Config {
             .set_alpn_protos(&AlpnProtocols::from(alpn_protocols).encode())?;
         Ok(())
     }
+
+    /// Sets a callback that configures the [SslRef] of every new connection before its
+    /// handshake starts. It receives the server name the connection is opened for and the real
+    /// (inner) [TransportParameters] this connection already offers, for
+    /// [SslRef::set_quic_transport_params_outer], which a reduced ClientHelloOuter set is usually
+    /// filtered from, not built separately.
+    ///
+    /// This is where settings go that BoringSSL keeps per connection rather than per context,
+    /// such as ECH ([SslRef::set_enable_ech_grease], [SslRef::set_ech_config_list]), ALPS
+    /// ([SslRef::add_application_settings]) or the key shares
+    /// ([SslRef::set_client_key_shares]). The callback runs after the server name, the hostname
+    /// to verify, the transport parameters and a session from the [SessionCache] have been set,
+    /// so [SslRef::session] tells whether the connection got a session to offer. BoringSSL still
+    /// drops it when the handshake starts if it cannot offer it, e.g. because it has expired;
+    /// then the ClientHello offers none. Sessions themselves are managed through the
+    /// [SessionCache], which also keeps the transport parameters 0-RTT needs. An error aborts the
+    /// connection attempt.
+    pub fn set_configure_connection_callback<F>(&mut self, callback: F)
+    where
+        F: Fn(&mut SslRef, &str, &TransportParameters) -> Result<()> + Send + Sync + 'static,
+    {
+        self.configure_connection = Some(Box::new(callback));
+    }
 }
 
 impl crypto::ClientConfig for Config {
@@ -113,10 +179,57 @@ impl crypto::ClientConfig for Config {
         server_name: &str,
         params: &TransportParameters,
     ) -> StdResult<Box<dyn crypto::Session>, ConnectError> {
-        let version = QuicVersion::parse(version).unwrap();
+        let version = QuicVersion::parse(version)?;
 
-        Ok(Session::new(self, version, server_name, params)
-            .map_err(|_| ConnectError::EndpointStopping)?)
+        Ok(Session::new(self, version, server_name, params, None)?)
+    }
+}
+
+/// A [`Config`] plus data specific to one connection attempt, such as an ECH config list looked
+/// up per host. Wraps the same shared [`Config`] (no new [`SslContext`](btls::ssl::SslContext)
+/// is built) and runs `configure` for this connection's [`SslRef`] right after the shared
+/// [`Config::set_configure_connection_callback`], if any, at the same point in the handshake (see
+/// that method's doc).
+///
+/// Unlike [`Config::set_configure_connection_callback`], which is set once and reused for every
+/// connection the shared [`Config`] starts, `configure` here is specific to the one
+/// [`PerConnectionConfig`] it was built with: a caller building a fresh one per connection
+/// attempt (as [`quinn::Endpoint::connect_with`] takes a fresh `Arc<dyn ClientConfig>` per call
+/// already) can pass per-connection data without keeping it in shared, per-client state that
+/// unrelated or overlapping connection attempts could race on or overwrite.
+pub struct PerConnectionConfig {
+    shared: Arc<Config>,
+    configure: Box<ConfigureConnection>,
+}
+
+impl PerConnectionConfig {
+    pub fn new<F>(shared: Arc<Config>, configure: F) -> Self
+    where
+        F: Fn(&mut SslRef, &str, &TransportParameters) -> Result<()> + Send + Sync + 'static,
+    {
+        Self {
+            shared,
+            configure: Box::new(configure),
+        }
+    }
+}
+
+impl crypto::ClientConfig for PerConnectionConfig {
+    fn start_session(
+        self: Arc<Self>,
+        version: u32,
+        server_name: &str,
+        params: &TransportParameters,
+    ) -> StdResult<Box<dyn crypto::Session>, ConnectError> {
+        let version = QuicVersion::parse(version)?;
+
+        Ok(Session::new(
+            self.shared.clone(),
+            version,
+            server_name,
+            params,
+            Some(&*self.configure),
+        )?)
     }
 }
 
@@ -127,7 +240,7 @@ static SESSION_INDEX: LazyLock<c_int> = LazyLock::new(|| unsafe {
 /// The [crypto::Session] implementation for BoringSSL.
 struct Session {
     state: Box<SessionState>,
-    server_name: Bytes,
+    server_name: String,
     session_cache: Arc<dyn SessionCache>,
     zero_rtt_peer_params: Option<TransportParameters>,
     handshake_data_available: bool,
@@ -135,11 +248,14 @@ struct Session {
 }
 
 impl Session {
+    /// `extra_configure`, when given, runs on this connection's `Ssl` right after `cfg`'s own
+    /// shared [`Config::set_configure_connection_callback`], if any; see [`PerConnectionConfig`].
     fn new(
         cfg: Arc<Config>,
         version: QuicVersion,
         server_name: &str,
         params: &TransportParameters,
+        extra_configure: Option<&ConfigureConnection>,
     ) -> Result<Box<Self>> {
         let session_cache = cfg.session_cache.clone();
         let mut ssl = Ssl::new(&cfg.ctx).unwrap();
@@ -160,20 +276,33 @@ impl Session {
             .map_err(|_| ConnectError::InvalidServerName(server_name.into()))?;
 
         // Set the transport parameters.
-        ssl.set_quic_transport_params(&encode_params(params))
-            .map_err(|_| ConnectError::EndpointStopping)?;
+        ssl.set_quic_transport_params(&encode_params(params))?;
 
-        let server_name_bytes = Bytes::copy_from_slice(server_name.as_bytes());
-
-        // If we have a cached session, use it.
+        // If we have a cached session, offer it. A TLS 1.3 ticket is used only once, so take it
+        // out of the cache; this connection stores the tickets the server sends it. BoringSSL
+        // offers the session as a PSK and, if the ticket allows early data, also attempts 0-RTT.
+        // It drops a session it cannot offer, e.g. an expired one, when the handshake starts;
+        // that one is gone from the cache too, but could not have been used later either.
+        // Only a session of a connection of this QUIC version (RFC 9369, section 5).
         let mut zero_rtt_peer_params = None;
-        if let Some(entry) = session_cache.get(server_name_bytes.clone()) {
+        if let Some(entry) = session_cache.take(session_cache_key(server_name, version.label())) {
             match Entry::decode(ssl.ssl_context(), entry) {
                 Ok(entry) => {
                     zero_rtt_peer_params = Some(entry.params);
                     match unsafe { ssl.set_session(entry.session.as_ref()) } {
                         Ok(()) => {
-                            trace!("attempting resumption (0-RTT) for server: {}.", server_name);
+                            if entry.session.early_data_capable() {
+                                trace!(
+                                    "attempting resumption (0-RTT) for server: {}.",
+                                    server_name
+                                );
+                            } else {
+                                trace!(
+                                    "attempting resumption (1-RTT) for server: {}. The ticket \
+                                     does not allow early data.",
+                                    server_name
+                                );
+                            }
                         }
                         Err(e) => {
                             warn!(
@@ -197,9 +326,28 @@ impl Session {
             );
         }
 
+        if let Some(configure) = &cfg.configure_connection {
+            if let Err(e) = configure(&mut ssl, server_name, params) {
+                warn!(
+                    "failed configuring the connection to server {}: {:?}",
+                    server_name, e
+                );
+                return Err(e);
+            }
+        }
+        if let Some(configure) = extra_configure {
+            if let Err(e) = configure(&mut ssl, server_name, params) {
+                warn!(
+                    "failed configuring the connection to server {}: {:?}",
+                    server_name, e
+                );
+                return Err(e);
+            }
+        }
+
         let mut session = Box::new(Self {
             state: SessionState::new(ssl, Side::Client, version)?,
-            server_name: server_name_bytes,
+            server_name: server_name.to_owned(),
             session_cache,
             zero_rtt_peer_params,
             handshake_data_available: false,
@@ -232,8 +380,8 @@ impl Session {
 
         self.zero_rtt_peer_params = None;
 
-        // Removed the failed cache entry.
-        self.session_cache.remove(self.server_name.clone());
+        // The ticket was taken out of the cache when the connection started. Leave the cache
+        // alone: an entry there now came from another connection.
 
         // Now retry advancing the handshake, this time in 1-RTT mode.
         if let Err(e) = self.state.advance_handshake() {
@@ -242,12 +390,12 @@ impl Session {
     }
 
     /// Client-side only callback from BoringSSL to allow caching of a new session.
+    ///
+    /// Every ticket is cached, whether or not it allows early data: a ticket without early data
+    /// still resumes the session with a PSK. BoringSSL attempts 0-RTT only with a ticket that
+    /// allows it ([QuicSslSession::early_data_capable]), and without 0-RTT keys quinn's
+    /// `Connecting::into_0rtt` fails and the handshake continues in 1-RTT.
     fn on_new_session(&mut self, session: SslSession) {
-        if !session.early_data_capable() {
-            warn!("failed caching session: not early data capable");
-            return;
-        }
-
         // Get the server transport parameters.
         let params = match self.state.ssl.get_peer_quic_transport_params() {
             Some(params) => {
@@ -269,8 +417,10 @@ impl Session {
         let entry = Entry { session, params };
         match entry.encode() {
             Ok(value) => {
-                // Cache the session.
-                self.session_cache.put(self.server_name.clone(), value)
+                // Under the version of the connection, the negotiated one if the server switched
+                // versions (RFC 9369, section 5).
+                let key = session_cache_key(&self.server_name, self.state.version.label());
+                self.session_cache.put(key, value)
             }
             Err(e) => {
                 warn!("failed caching session: unable to encode entry: {:?}", e);
@@ -307,6 +457,10 @@ impl Session {
 impl crypto::Session for Session {
     fn initial_keys(&self, dcid: &ConnectionId, side: Side) -> crypto::Keys {
         self.state.initial_keys(dcid, side)
+    }
+
+    fn set_version(&mut self, version: u32) -> StdResult<(), crypto::UnsupportedVersion> {
+        self.state.set_version(QuicVersion::parse(version)?)
     }
 
     fn handshake_data(&self) -> Option<Box<dyn Any>> {
@@ -351,6 +505,10 @@ impl crypto::Session for Session {
         }
 
         Ok(false)
+    }
+
+    fn poll_handshake(&mut self, waker: &Waker) -> Poll<StdResult<(), TransportError>> {
+        self.state.poll_handshake(waker)
     }
 
     fn transport_parameters(&self) -> StdResult<Option<TransportParameters>, TransportError> {

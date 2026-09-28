@@ -10,7 +10,7 @@ Subject: [PATCH] Introduce X509_CHECK_FLAG_UNDERSCORE_WILDCARDS
  3 files changed, 31 insertions(+), 1 deletion(-)
 
 diff --git a/crypto/x509/v3_utl.cc b/crypto/x509/v3_utl.cc
-index 015bbcad2..2b9b63430 100644
+index 015bbca..2b9b634 100644
 --- a/crypto/x509/v3_utl.cc
 +++ b/crypto/x509/v3_utl.cc
 @@ -740,7 +740,9 @@ static int wildcard_match(const unsigned char *prefix, size_t prefix_len,
@@ -25,7 +25,7 @@ index 015bbcad2..2b9b63430 100644
      }
    }
 diff --git a/crypto/x509/x509_test.cc b/crypto/x509/x509_test.cc
-index c6ce62dd1..f284f421f 100644
+index c6ce62d..f284f42 100644
 --- a/crypto/x509/x509_test.cc
 +++ b/crypto/x509/x509_test.cc
 @@ -5209,6 +5209,31 @@ TEST(X509Test, Names) {
@@ -61,7 +61,7 @@ index c6ce62dd1..f284f421f 100644
  
    size_t i = 0;
 diff --git a/include/openssl/x509.h b/include/openssl/x509.h
-index 926f365f4..cc538cceb 100644
+index 2c37d26..c62d475 100644
 --- a/include/openssl/x509.h
 +++ b/include/openssl/x509.h
 @@ -3359,6 +3359,9 @@ OPENSSL_EXPORT int X509_VERIFY_PARAM_add1_host(X509_VERIFY_PARAM *param,
@@ -74,5 +74,3 @@ index 926f365f4..cc538cceb 100644
  // X509_VERIFY_PARAM_set_hostflags sets the name-checking flags on |param| to
  // |flags|. |flags| should be a combination of |X509_CHECK_FLAG_*| constants.
  OPENSSL_EXPORT void X509_VERIFY_PARAM_set_hostflags(X509_VERIFY_PARAM *param,
--- 
-2.40.0

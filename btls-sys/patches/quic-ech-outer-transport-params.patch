@@ -1,0 +1,136 @@
+A distinct, smaller quic_transport_parameters value for the ClientHelloOuter
+of a split Encrypted Client Hello, independent of the ClientHelloInner's
+(the real one, unaffected). BoringSSL always sent the same bytes to both:
+Chrome/quiche never asks for anything else (captured: Chrome's outer hello
+over QUIC carries the full, ordinary parameter set), but Firefox's neqo
+does not — its outer is only ever a fallback the server completes if it
+rejects the real, encrypted hello, so it forwards a small allowlisted
+subset (`neqo_transport::tparams::TransportParameters::filter_ch_outer`) —
+for a stock client, exactly three ever hold a value:
+`max_ack_delay`, `initial_src_cid`, `version_information`, in ascending
+transport parameter ID order.
+
+- SSL_set_quic_transport_params_outer: configure the reduced outer value.
+  Unset (the default): unchanged behaviour, the same bytes cover the outer
+  hello too, compressible as before.
+
+Once configured, the extension is written directly for both hello types,
+never through the "compressible" path: ECH's compression assumes an
+extension is byte-for-byte identical between ClientHelloOuter and Inner,
+and has the server reconstruct EncodedClientHelloInner (the encrypted,
+AAD-bound one) by copying the *outer's* actual bytes for it. With a
+deliberately different, reduced outer value, that reconstruction would use
+the wrong bytes and fail ECH's confirmation check on the client.
+
+The legacy QUIC extension codepoint (0xffa5) is not covered — no captured
+client pairs it with ECH, so a caller using both keeps the old, full,
+compressible behaviour instead of a half-modelled split.
+
+diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
+index a140e34..ac08701 100644
+--- a/include/openssl/ssl.h
++++ b/include/openssl/ssl.h
+@@ -4172,6 +4172,25 @@ OPENSSL_EXPORT int SSL_set_quic_transport_params(SSL *ssl,
+ OPENSSL_EXPORT void SSL_get_peer_quic_transport_params(
+     const SSL *ssl, const uint8_t **out_params, size_t *out_params_len);
+ 
++// SSL_set_quic_transport_params_outer configures a distinct
++// quic_transport_parameters extension value that a client sends only in the
++// ClientHelloOuter of a split Encrypted Client Hello (draft-ietf-tls-esni),
++// instead of the value configured with |SSL_set_quic_transport_params|
++// (which keeps covering the ClientHelloInner, and every ClientHello when ECH
++// is not in use). Some QUIC stacks send a reduced parameter set in the
++// outer hello, since it is only ever a fallback the server completes if it
++// rejects the real, encrypted one, so most parameters would be both
++// meaningless there and a source of real, distinguishing values a hello
++// otherwise meant to look generic should not carry. |params| only needs to
++// be valid for the duration of this call. Has no effect unless ECH sends a
++// split ClientHelloOuter/Inner or |SSL_set_quic_use_legacy_codepoint|
++// selects the legacy codepoint, in which cases the value from
++// |SSL_set_quic_transport_params| covers both hellos, as if this had not
++// been called. Returns 1 on success, 0 on failure.
++OPENSSL_EXPORT int SSL_set_quic_transport_params_outer(SSL *ssl,
++                                                       const uint8_t *params,
++                                                       size_t params_len);
++
+ // SSL_set_quic_use_legacy_codepoint configures whether to use the legacy QUIC
+ // extension codepoint 0xffa5 as opposed to the official value 57. Call with
+ // |use_legacy| set to 1 to use 0xffa5 and call with 0 to use 57. By default,
+diff --git a/ssl/extensions.cc b/ssl/extensions.cc
+index 99281ff..0a22b84 100644
+--- a/ssl/extensions.cc
++++ b/ssl/extensions.cc
+@@ -2925,6 +2925,40 @@ static bool ext_quic_transport_params_add_clienthello_impl(
+ static bool ext_quic_transport_params_add_clienthello(
+     const SSL_HANDSHAKE *hs, CBB *out, CBB *out_compressible,
+     ssl_client_hello_type_t type) {
++  // |quic_transport_params_outer|, when configured, makes the
++  // ClientHelloOuter's quic_transport_parameters different from the
++  // ClientHelloInner's. Such an extension must never go through
++  // |out_compressible|, on *either* hello: ECH's compression assumes an
++  // extension written there while building ClientHelloInner is
++  // byte-for-byte what the already-sent ClientHelloOuter also carries, and
++  // has the server reconstruct the encrypted, AAD-bound
++  // EncodedClientHelloInner by copying the *outer's* actual bytes for it —
++  // which here are the deliberately different, reduced ones, corrupting
++  // that reconstruction and failing ECH's confirmation check on the
++  // client. So, like server_name's public-name override, this writes
++  // directly to |out| for both hello types once configured. See
++  // |SSL_set_quic_transport_params_outer|.
++  if (!hs->config->quic_transport_params_outer.empty() &&
++      !hs->config->quic_use_legacy_codepoint) {
++    // Same misconfiguration checks as the non-outer path below, against the
++    // base value: the outer one is never sent on its own, without the real
++    // ClientHelloInner value also having been configured.
++    if (hs->config->quic_transport_params.empty() && !SSL_is_quic(hs->ssl)) {
++      return true;
++    }
++    if (hs->config->quic_transport_params.empty() || !SSL_is_quic(hs->ssl)) {
++      OPENSSL_PUT_ERROR(SSL, SSL_R_QUIC_TRANSPORT_PARAMETERS_MISCONFIGURED);
++      return false;
++    }
++    const Array<uint8_t> &params = type == ssl_client_hello_outer
++                                        ? hs->config->quic_transport_params_outer
++                                        : hs->config->quic_transport_params;
++    CBB contents;
++    return CBB_add_u16(out, TLSEXT_TYPE_quic_transport_parameters) &&
++           CBB_add_u16_length_prefixed(out, &contents) &&
++           CBB_add_bytes(&contents, params.data(), params.size()) &&
++           CBB_flush(out);
++  }
+   return ext_quic_transport_params_add_clienthello_impl(
+       hs, out_compressible, /*use_legacy_codepoint=*/false);
+ }
+diff --git a/ssl/internal.h b/ssl/internal.h
+index c1fcee9..c9701eb 100644
+--- a/ssl/internal.h
++++ b/ssl/internal.h
+@@ -3353,6 +3353,11 @@ struct SSL_CONFIG {
+   // Contains the QUIC transport params that this endpoint will send.
+   Array<uint8_t> quic_transport_params;
+ 
++  // If not empty, overrides |quic_transport_params| in a ClientHelloOuter of
++  // a split Encrypted Client Hello only; see
++  // |SSL_set_quic_transport_params_outer|.
++  Array<uint8_t> quic_transport_params_outer;
++
+   // Contains the context used to decide whether to accept early data in QUIC.
+   Array<uint8_t> quic_early_data_context;
+ 
+diff --git a/ssl/ssl_lib.cc b/ssl/ssl_lib.cc
+index d7a54a6..0f58981 100644
+--- a/ssl/ssl_lib.cc
++++ b/ssl/ssl_lib.cc
+@@ -1107,6 +1107,12 @@ int SSL_set_quic_transport_params(SSL *ssl, const uint8_t *params,
+          ssl->config->quic_transport_params.CopyFrom(Span(params, params_len));
+ }
+ 
++int SSL_set_quic_transport_params_outer(SSL *ssl, const uint8_t *params,
++                                        size_t params_len) {
++  return ssl->config && ssl->config->quic_transport_params_outer.CopyFrom(
++                            Span(params, params_len));
++}
++
+ void SSL_get_peer_quic_transport_params(const SSL *ssl,
+                                         const uint8_t **out_params,
+                                         size_t *out_params_len) {

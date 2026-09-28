@@ -1,0 +1,99 @@
+Adds SSL_set_ech_grease_aead and SSL_set_ech_grease_payload_len: the HPKE AEAD
+and the payload length of a GREASE encrypted_client_hello extension. By default
+BoringSSL picks the AEAD from the AES hardware support and a random payload
+length; NSS (Firefox) always announces ChaCha20-Poly1305 and sizes the payload
+like a real ClientHelloInner.
+
+diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
+index 40bd792..d583291 100644
+--- a/include/openssl/ssl.h
++++ b/include/openssl/ssl.h
+@@ -4331,6 +4331,18 @@ OPENSSL_EXPORT const char *SSL_early_data_reason_string(
+ // ECH extension when no supported ECHConfig is available.
+ OPENSSL_EXPORT void SSL_set_enable_ech_grease(SSL *ssl, int enable);
+ 
++// SSL_set_ech_grease_aead sets the HPKE AEAD that a GREASE ECH extension on
++// |ssl| announces. |aead_id| is one of the |EVP_HPKE_*| AEAD IDs supported for
++// ECH, or zero for the default: AES-128-GCM with AES hardware support and
++// ChaCha20-Poly1305 without. It returns one on success and zero if |aead_id|
++// is not supported.
++OPENSSL_EXPORT int SSL_set_ech_grease_aead(SSL *ssl, uint16_t aead_id);
++
++// SSL_set_ech_grease_payload_len sets the length of the payload field,
++// including the AEAD tag, of a GREASE ECH extension on |ssl|. Zero, the
++// default, picks a random multiple of 32 between 128 and 224 plus the tag.
++OPENSSL_EXPORT void SSL_set_ech_grease_payload_len(SSL *ssl, uint16_t len);
++
+ // SSL_set1_ech_config_list configures |ssl| to, as a client, offer ECH with the
+ // specified configuration. |ech_config_list| should contain a serialized
+ // ECHConfigList structure. It returns one on success and zero on error.
+diff --git a/ssl/encrypted_client_hello.cc b/ssl/encrypted_client_hello.cc
+index be01d9c..f95ddfd 100644
+--- a/ssl/encrypted_client_hello.cc
++++ b/ssl/encrypted_client_hello.cc
+@@ -740,7 +740,10 @@ static bool setup_ech_grease(SSL_HANDSHAKE *hs) {
+                               ? hs->ssl->config->aes_hw_override_value
+                               : EVP_has_aes_hardware();
+   const EVP_HPKE_AEAD *aead =
+-      has_aes_hw ? EVP_hpke_aes_128_gcm() : EVP_hpke_chacha20_poly1305();
++      hs->config->ech_grease_aead_id != 0
++          ? get_ech_aead(hs->config->ech_grease_aead_id)
++          : (has_aes_hw ? EVP_hpke_aes_128_gcm()
++                        : EVP_hpke_chacha20_poly1305());
+   static_assert(ssl_grease_ech_config_id < sizeof(hs->grease_seed),
+                 "hs->grease_seed is too small");
+   uint8_t config_id = hs->grease_seed[ssl_grease_ech_config_id];
+@@ -765,7 +768,9 @@ static bool setup_ech_grease(SSL_HANDSHAKE *hs) {
+   // estimate maximum_name_length to be between 32 and 100 bytes. Then round up
+   // to a multiple of 32, to match draft-ietf-tls-esni-13, section 6.1.3.
+   const size_t payload_len =
+-      32 * random_size(128 / 32, 224 / 32) + aead_overhead(aead);
++      hs->config->ech_grease_payload_len != 0
++          ? hs->config->ech_grease_payload_len
++          : 32 * random_size(128 / 32, 224 / 32) + aead_overhead(aead);
+   bssl::ScopedCBB cbb;
+   CBB enc_cbb, payload_cbb;
+   uint8_t *payload;
+@@ -923,6 +928,25 @@ void SSL_set_enable_ech_grease(SSL *ssl, int enable) {
+   ssl->config->ech_grease_enabled = !!enable;
+ }
+ 
++int SSL_set_ech_grease_aead(SSL *ssl, uint16_t aead_id) {
++  if (!ssl->config) {
++    return 0;
++  }
++  if (aead_id != 0 && get_ech_aead(aead_id) == nullptr) {
++    OPENSSL_PUT_ERROR(SSL, SSL_R_UNSUPPORTED_ECH_SERVER_CONFIG);
++    return 0;
++  }
++  ssl->config->ech_grease_aead_id = aead_id;
++  return 1;
++}
++
++void SSL_set_ech_grease_payload_len(SSL *ssl, uint16_t len) {
++  if (!ssl->config) {
++    return;
++  }
++  ssl->config->ech_grease_payload_len = len;
++}
++
+ int SSL_set1_ech_config_list(SSL *ssl, const uint8_t *ech_config_list,
+                              size_t ech_config_list_len) {
+   if (!ssl->config) {
+diff --git a/ssl/internal.h b/ssl/internal.h
+index 71f6c11..4116d89 100644
+--- a/ssl/internal.h
++++ b/ssl/internal.h
+@@ -3365,6 +3365,12 @@ struct SSL_CONFIG {
+   // verify_mode is a bitmask of |SSL_VERIFY_*| values.
+   uint8_t verify_mode = SSL_VERIFY_NONE;
+ 
++  // ech_grease_aead_id, if not zero, is the HPKE AEAD announced by ECH GREASE.
++  uint16_t ech_grease_aead_id = 0;
++
++  // ech_grease_payload_len, if not zero, is the payload length of ECH GREASE.
++  uint16_t ech_grease_payload_len = 0;
++
+   // ech_grease_enabled controls whether ECH GREASE may be sent in the
+   // ClientHello.
+   bool ech_grease_enabled : 1;

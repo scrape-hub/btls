@@ -1,0 +1,132 @@
+Adds SSL_CTX_set_extension_order_tail: extensions that a client sends last in
+the ClientHello, after the ones ordered by SSL_CTX_set_extension_order,
+SSL_CTX_set_permute_extensions or the default order. NSS (Firefox) permutes its
+QUIC ClientHello extensions but always ends with quic_transport_parameters and
+encrypted_client_hello. pre_shared_key still comes last.
+
+diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
+index b3d62f0..40bd792 100644
+--- a/include/openssl/ssl.h
++++ b/include/openssl/ssl.h
+@@ -5313,6 +5313,16 @@ OPENSSL_EXPORT int SSL_CTX_set_extension_order(SSL_CTX *ctx, const uint16_t *ids
+ OPENSSL_EXPORT void SSL_CTX_set_tls13_legacy_extensions(SSL_CTX *ctx,
+                                                         int enabled);
+ 
++// SSL_CTX_set_extension_order_tail configures extensions that clients on |ctx|
++// send last in the ClientHello, in the order of |ids|. All other extensions
++// come first, in the order that results from |SSL_CTX_set_extension_order|,
++// |SSL_CTX_set_permute_extensions| or the default. Only the GREASE, padding and
++// pre_shared_key extensions still follow them. Unknown IDs are ignored. It
++// returns one on success and zero on allocation failure.
++OPENSSL_EXPORT int SSL_CTX_set_extension_order_tail(SSL_CTX *ctx,
++                                                    const uint16_t *ids,
++                                                    size_t num_ids);
++
+ // SSL_set_record_size_limit configures whether sockets on |ssl| should
+ // send record size limit extension.
+ OPENSSL_EXPORT void SSL_set_record_size_limit(SSL *ssl, uint16_t limit);
+diff --git a/ssl/extensions.cc b/ssl/extensions.cc
+index c400861..8a91245 100644
+--- a/ssl/extensions.cc
++++ b/ssl/extensions.cc
+@@ -3922,6 +3922,45 @@ static const struct tls_extension *tls_extension_find(uint32_t *out_index,
+   return nullptr;
+ }
+ 
++bool ssl_apply_extension_order_tail(SSL_HANDSHAKE *hs) {
++  const Array<uint16_t> &tail = hs->ssl->ctx->extension_order_tail;
++  if (tail.empty()) {
++    return true;
++  }
++
++  bool pinned[kNumExtensions] = {false};
++  uint8_t pinned_order[kNumExtensions];
++  size_t num_pinned = 0;
++  for (uint16_t id : tail) {
++    uint32_t index;
++    if (tls_extension_find(&index, id) == nullptr || pinned[index]) {
++      continue;
++    }
++    pinned[index] = true;
++    pinned_order[num_pinned++] = static_cast<uint8_t>(index);
++  }
++
++  Array<uint8_t> permutation;
++  if (!permutation.InitForOverwrite(kNumExtensions)) {
++    return false;
++  }
++  size_t num_written = 0;
++  for (size_t unpermuted = 0; unpermuted < kNumExtensions; unpermuted++) {
++    size_t i = hs->extension_permutation.empty()
++                   ? unpermuted
++                   : hs->extension_permutation[unpermuted];
++    if (!pinned[i]) {
++      permutation[num_written++] = static_cast<uint8_t>(i);
++    }
++  }
++  for (size_t i = 0; i < num_pinned; i++) {
++    permutation[num_written++] = pinned_order[i];
++  }
++  assert(num_written == kNumExtensions);
++  hs->extension_permutation = std::move(permutation);
++  return true;
++}
++
+ static bool add_padding_extension(CBB *cbb, uint16_t ext, size_t len) {
+   CBB child;
+   if (!CBB_add_u16(cbb, ext) ||  //
+diff --git a/ssl/handshake_client.cc b/ssl/handshake_client.cc
+index 378bc70..7849333 100644
+--- a/ssl/handshake_client.cc
++++ b/ssl/handshake_client.cc
+@@ -448,6 +448,7 @@ static enum ssl_hs_wait_t do_start_connect(SSL_HANDSHAKE *hs) {
+ 
+   if (!ssl_setup_key_shares(hs, /*override_group_id=*/0) ||
+       !ssl_setup_extension_order(hs) ||
++      !ssl_apply_extension_order_tail(hs) ||
+       !ssl_encrypt_client_hello(hs, Span(ech_enc, ech_enc_len)) ||
+       !ssl_add_client_hello(hs)) {
+     return ssl_hs_error;
+diff --git a/ssl/internal.h b/ssl/internal.h
+index 7b371ef..71f6c11 100644
+--- a/ssl/internal.h
++++ b/ssl/internal.h
+@@ -2142,6 +2142,11 @@ bssl::UniquePtr<SSL_SESSION> tls13_create_session_with_ticket(SSL *ssl,
+ // to ssl_setup_extension_permutation otherwise.
+ bool ssl_setup_extension_order(SSL_HANDSHAKE *hs);
+ 
++// ssl_apply_extension_order_tail moves the extensions configured with
++// |SSL_CTX_set_extension_order_tail| to the end of the extension order of |hs|.
++// It returns true on success and false on error.
++bool ssl_apply_extension_order_tail(SSL_HANDSHAKE *hs);
++
+ // ssl_setup_extension_permutation computes a ClientHello extension permutation
+ // for |hs|, if applicable. It returns true on success and false on error.
+ bool ssl_setup_extension_permutation(SSL_HANDSHAKE *hs);
+@@ -4100,6 +4105,10 @@ struct ssl_ctx_st : public bssl::RefCounted<ssl_ctx_st> {
+   // as the order to be used to write the ssl extensions.
+   bssl::Array<uint16_t> extension_order;
+ 
++  // extension_order_tail, if not empty, lists extensions that are sent last,
++  // in this order.
++  bssl::Array<uint16_t> extension_order_tail;
++
+   // preserve_tls13_cipher_list indicates that the TLS 1.3 cipher list order should
+   // be preserved, potentially preferring ChaCha20-Poly1305 over AES-GCM ciphers.
+   // It is only effective on the client side.
+diff --git a/ssl/ssl_lib.cc b/ssl/ssl_lib.cc
+index 9d46118..e6f2b1a 100644
+--- a/ssl/ssl_lib.cc
++++ b/ssl/ssl_lib.cc
+@@ -3188,6 +3188,11 @@ void SSL_CTX_set_tls13_legacy_extensions(SSL_CTX *ctx, int enabled) {
+   ctx->tls13_legacy_extensions = !!enabled;
+ }
+ 
++int SSL_CTX_set_extension_order_tail(SSL_CTX *ctx, const uint16_t *ids,
++                                     size_t num_ids) {
++  return ctx->extension_order_tail.CopyFrom(Span(ids, num_ids));
++}
++
+ int32_t SSL_get_ticket_age_skew(const SSL *ssl) {
+   return ssl->s3->ticket_age_skew;
+ }

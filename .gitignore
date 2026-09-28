@@ -7,3 +7,4 @@ Cargo.lock
 .venv
 boring-sys/deps/
 *.py
+!scripts/renew-test-certs.py

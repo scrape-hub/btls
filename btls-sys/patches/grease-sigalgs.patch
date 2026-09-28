@@ -1,0 +1,145 @@
+Backport of BoringSSL 29e593e29165df578ab778269a1f04da2055c32f
+("Add GREASE for signature_algorithms"), adapted to the vendored revision:
+prefix_symbols.h does not exist yet, SSL_CTX is still ssl_ctx_st instead of
+SSLContext, and the ssl.h/ssl_lib.cc/runner contexts differ.
+
+diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
+index a7d2e6f..6e7b435 100644
+--- a/include/openssl/ssl.h
++++ b/include/openssl/ssl.h
+@@ -5282,6 +5282,16 @@ OPENSSL_EXPORT void SSL_CTX_set_retain_only_sha256_of_client_certs(SSL_CTX *ctx,
+ // GREASE. See RFC 8701.
+ OPENSSL_EXPORT void SSL_CTX_set_grease_enabled(SSL_CTX *ctx, int enabled);
+ 
++// SSL_CTX_set_grease_sigalgs_enabled configures whether sockets on |ctx| should
++// send a GREASE value in signature_algorithms extensions in ClientHello
++// messages. See RFC 8701.
++// TODO(crbug.com/526597789): Fold this functionality into
++// |SSL_CTX_set_grease_enabled| once deployed safely.
++// TODO(crbug.com/529360100): signature_algorithms extensions in
++// CertificateRequest messages should also be GREASE'd.
++OPENSSL_EXPORT void SSL_CTX_set_grease_sigalgs_enabled(SSL_CTX *ctx,
++                                                       int enabled);
++
+ // SSL_CTX_set_permute_extensions configures whether sockets on |ctx| should
+ // permute extensions. For now, this is only implemented for the ClientHello.
+ OPENSSL_EXPORT void SSL_CTX_set_permute_extensions(SSL_CTX *ctx, int enabled);
+diff --git a/ssl/extensions.cc b/ssl/extensions.cc
+index f460204..e229aaa 100644
+--- a/ssl/extensions.cc
++++ b/ssl/extensions.cc
+@@ -994,8 +994,16 @@ static bool ext_sigalgs_add_clienthello(const SSL_HANDSHAKE *hs, CBB *out,
+   CBB contents, sigalgs_cbb;
+   if (!CBB_add_u16(out_compressible, TLSEXT_TYPE_signature_algorithms) ||
+       !CBB_add_u16_length_prefixed(out_compressible, &contents) ||
+-      !CBB_add_u16_length_prefixed(&contents, &sigalgs_cbb) ||
+-      !tls12_add_verify_sigalgs(hs, &sigalgs_cbb) ||
++      !CBB_add_u16_length_prefixed(&contents, &sigalgs_cbb)) {
++    return false;
++  }
++  // Add a fake signature algorithm. See RFC 8701.
++  if (hs->ssl->ctx->grease_sigalgs_enabled &&
++      !CBB_add_u16(&sigalgs_cbb,
++                   ssl_get_grease_value(hs, ssl_grease_signature_algorithm))) {
++    return false;
++  }
++  if (!tls12_add_verify_sigalgs(hs, &sigalgs_cbb) ||
+       !CBB_flush(out_compressible)) {
+     return false;
+   }
+diff --git a/ssl/internal.h b/ssl/internal.h
+index c80e565..de67716 100644
+--- a/ssl/internal.h
++++ b/ssl/internal.h
+@@ -1612,7 +1612,8 @@ enum ssl_grease_index_t {
+   ssl_grease_version,
+   ssl_grease_ticket_extension,
+   ssl_grease_ech_config_id,
+-  ssl_grease_last_index = ssl_grease_ech_config_id,
++  ssl_grease_signature_algorithm,
++  ssl_grease_last_index = ssl_grease_signature_algorithm,
+ };
+ 
+ enum tls12_server_hs_state_t {
+@@ -4046,6 +4047,11 @@ struct ssl_ctx_st : public bssl::RefCounted<ssl_ctx_st> {
+   // grease_enabled is whether GREASE (RFC 8701) is enabled.
+   bool grease_enabled : 1;
+ 
++  // grease_sigalgs_enabled controls whether GREASE signature algorithms may be
++  // sent.
++  // TODO(crbug.com/526597789): Fold into `grease_enabled` once deployed safely.
++  bool grease_sigalgs_enabled : 1;
++
+   // permute_extensions is whether to permute extensions when sending messages.
+   bool permute_extensions : 1;
+ 
+diff --git a/ssl/ssl_lib.cc b/ssl/ssl_lib.cc
+index f2e3a70..b923493 100644
+--- a/ssl/ssl_lib.cc
++++ b/ssl/ssl_lib.cc
+@@ -396,6 +396,7 @@ ssl_ctx_st::ssl_ctx_st(const SSL_METHOD *ssl_method)
+       signed_cert_timestamps_enabled(false),
+       channel_id_enabled(false),
+       grease_enabled(false),
++      grease_sigalgs_enabled(false),
+       permute_extensions(false),
+       disable_second_keyshare(false),
+       allow_unknown_alpn_protos(false),
+@@ -3152,6 +3153,10 @@ void SSL_CTX_set_grease_enabled(SSL_CTX *ctx, int enabled) {
+   ctx->grease_enabled = !!enabled;
+ }
+ 
++void SSL_CTX_set_grease_sigalgs_enabled(SSL_CTX *ctx, int enabled) {
++  ctx->grease_sigalgs_enabled = !!enabled;
++}
++
+ void SSL_CTX_set_permute_extensions(SSL_CTX *ctx, int enabled) {
+   ctx->permute_extensions = !!enabled;
+ }
+diff --git a/ssl/test/runner/common.go b/ssl/test/runner/common.go
+index 9d18d9d..b56b756 100644
+--- a/ssl/test/runner/common.go
++++ b/ssl/test/runner/common.go
+@@ -2624,6 +2624,15 @@ func containsGREASE(values []uint16) bool {
+ 	return false
+ }
+ 
++func containsSigAlgsGREASE(values []signatureAlgorithm) bool {
++	for _, v := range values {
++		if isGREASEValue(uint16(v)) {
++			return true
++		}
++	}
++	return false
++}
++
+ func isAllZero(v []byte) bool {
+ 	for _, b := range v {
+ 		if b != 0 {
+diff --git a/ssl/test/runner/handshake_server.go b/ssl/test/runner/handshake_server.go
+index 4e6ae98..5b327e9 100644
+--- a/ssl/test/runner/handshake_server.go
++++ b/ssl/test/runner/handshake_server.go
+@@ -382,6 +382,10 @@ func (hs *serverHandshakeState) readClientHello() error {
+ 		return fmt.Errorf("tls: client included signature_algorithms before TLS 1.2")
+ 	}
+ 
++	if config.Bugs.ExpectGREASE && !containsSigAlgsGREASE(hs.clientHello.signatureAlgorithms) {
++		return fmt.Errorf("tls: no GREASE signature_algorithms value found")
++	}
++
+ 	// Check the client cipher list is consistent with the version.
+ 	if clientProtocolOK && clientProtocol < VersionTLS12 && slices.ContainsFunc(hs.clientHello.cipherSuites, isTLS12Cipher) {
+ 		return fmt.Errorf("tls: client offered TLS 1.2 cipher before TLS 1.2")
+diff --git a/ssl/test/test_config.cc b/ssl/test/test_config.cc
+index 9a7ee6a..cf56619 100644
+--- a/ssl/test/test_config.cc
++++ b/ssl/test/test_config.cc
+@@ -2083,6 +2083,7 @@ bssl::UniquePtr<SSL_CTX> TestConfig::SetupCtx(SSL_CTX *old_ctx) const {
+ 
+   if (enable_grease) {
+     SSL_CTX_set_grease_enabled(ssl_ctx.get(), 1);
++    SSL_CTX_set_grease_sigalgs_enabled(ssl_ctx.get(), 1);
+   }
+ 
+   if (permute_extensions) {

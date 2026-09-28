@@ -7,16 +7,17 @@ use futures::future;
 use std::net::ToSocketAddrs;
 use std::pin::Pin;
 
+/// Needs network access. The roots of Google Trust Services come with the test (see
+/// tests/gts-roots.pem), so that it does not depend on a system CA store, which BoringSSL does
+/// not find on Windows.
 #[compio::test]
 async fn google() {
     let addr = "google.com:443".to_socket_addrs().unwrap().next().unwrap();
     let stream = TcpStream::connect(&addr).await.unwrap();
 
-    let config = SslConnector::builder(SslMethod::tls())
-        .unwrap()
-        .build()
-        .configure()
-        .unwrap();
+    let mut connector = SslConnector::builder(SslMethod::tls()).unwrap();
+    connector.set_ca_file("tests/gts-roots.pem").unwrap();
+    let config = connector.build().configure().unwrap();
 
     let ssl = config.into_ssl("google.com").unwrap();
     let mut stream = SslStream::new(ssl, stream).unwrap();

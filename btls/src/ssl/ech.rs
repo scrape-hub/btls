@@ -20,6 +20,11 @@ impl SslEchKeysBuilder {
         }
     }
 
+    /// Creates an `SslEchKeysBuilder` from a raw pointer, taking ownership of it.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure the pointer is a valid, uniquely owned `SSL_ECH_KEYS`.
     pub unsafe fn from_ptr(keys: *mut ffi::SSL_ECH_KEYS) -> Self {
         Self {
             keys: SslEchKeys::from_ptr(keys),

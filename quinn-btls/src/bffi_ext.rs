@@ -88,7 +88,13 @@ impl QuicSslContext for SslContext {
             bffi::SSL_VERIFY_NONE
         };
 
-        unsafe { bffi::SSL_CTX_set_verify(self.as_ptr(), mode, None) }
+        // Keep whatever verify callback (e.g. a custom certificate-pinning
+        // one) the caller already installed via `set_verify_callback`
+        // instead of clearing it.
+        unsafe {
+            let callback = bffi::SSL_CTX_get_verify_callback(self.as_ptr());
+            bffi::SSL_CTX_set_verify(self.as_ptr(), mode, callback)
+        }
     }
 
     fn set_quic_method(&mut self, method: &bffi::SSL_QUIC_METHOD) -> BoringResult {

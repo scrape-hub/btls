@@ -108,7 +108,8 @@ impl crypto::ServerConfig for Config {
     }
 
     fn retry_tag(&self, version: u32, orig_dst_cid: &ConnectionId, packet: &[u8]) -> [u8; 16] {
-        let version = QuicVersion::parse(version).unwrap();
+        // Quinn only uses a version for which initial_keys succeeded.
+        let version = QuicVersion::parse(version).expect("initial_keys refused this version");
         retry::retry_tag(&version, orig_dst_cid, packet)
     }
 
@@ -117,7 +118,8 @@ impl crypto::ServerConfig for Config {
         version: u32,
         params: &TransportParameters,
     ) -> Box<dyn crypto::Session> {
-        let version = QuicVersion::parse(version).unwrap();
+        // Quinn only uses a version for which initial_keys succeeded.
+        let version = QuicVersion::parse(version).expect("initial_keys refused this version");
         Session::new(self, version, params).unwrap()
     }
 }
@@ -154,6 +156,18 @@ impl Session {
 
         // Need to se
         ssl.set_quic_early_data_context(b"quinn-boring").unwrap();
+
+        // Session tickets are only good for the QUIC version of the connection that issued them
+        // (RFC 9369, section 5): BoringSSL resumes a session only with the session ID context it
+        // was issued under.
+        let sid_ctx = version.label().to_be_bytes();
+        unsafe {
+            map_result(bffi::SSL_set_session_id_context(
+                ssl.as_ptr(),
+                sid_ctx.as_ptr(),
+                sid_ctx.len(),
+            ))?;
+        }
 
         let mut session = Box::new(Self {
             state: SessionState::new(ssl, Side::Server, version)?,

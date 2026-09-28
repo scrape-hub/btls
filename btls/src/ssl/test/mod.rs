@@ -23,10 +23,13 @@ use crate::x509::{X509Name, X509};
 
 use super::CompliancePolicy;
 
+mod async_verify;
 mod cert_compressor;
 mod cert_verify;
+mod client_hello;
 mod custom_verify;
 mod ech;
+mod grease;
 mod private_key_method;
 mod server;
 mod session;
@@ -76,7 +79,7 @@ fn peer_certificate() {
     let fingerprint = cert.digest(MessageDigest::sha1()).unwrap();
     assert_eq!(
         hex::encode(fingerprint),
-        "59172d9313e84459bcff27f967e79e6e9217e584"
+        "d93f662e138c72f171a50d92eddb235adf5f88ba"
     );
 }
 

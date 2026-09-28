@@ -7,6 +7,20 @@
 //! This file reimplements tokio-btls with the [overhauled](https://github.com/sfackler/tokio-openssl/commit/56f6618ab619f3e431fa8feec2d20913bf1473aa)
 //! tokio-openssl interface while the tokio APIs from official [boring](https://github.com/cloudflare/boring) crate is not yet caught up
 //! to it.
+//!
+//! The handshake methods ([`SslStream::connect`] and friends) wait for a certificate verification
+//! that runs on another thread, so that it does not block the runtime: see
+//! [`SslContextBuilder::set_async_default_verify`](ssl::SslContextBuilder::set_async_default_verify).
+//! While the handshake waits with [`ErrorCode::WANT_CERTIFICATE_VERIFY`] for a job
+//! [`SslRef::has_pending_certificate_verification`](ssl::SslRef::has_pending_certificate_verification)
+//! reports as outstanding, they return `Poll::Pending` rather than that error, and the Ssl's task
+//! waker is the task's waker; the job wakes it when it is done, as that one and
+//! [`SslContextBuilder::set_async_custom_verify_callback`](ssl::SslContextBuilder::set_async_custom_verify_callback)
+//! do. A callback from
+//! [`SslContextBuilder::set_custom_verify_callback`](ssl::SslContextBuilder::set_custom_verify_callback)
+//! that itself returns [`SslVerifyError::Retry`](ssl::SslVerifyError::Retry), without such a job,
+//! surfaces as an ordinary `Poll::Ready(Err(_))` instead: nothing would ever wake a `Pending` for
+//! it.
 
 use std::{
     fmt, future,
@@ -91,11 +105,16 @@ fn cvt<T>(r: io::Result<T>) -> Poll<io::Result<T>> {
     }
 }
 
-fn cvt_ossl<T>(r: Result<T, ssl::Error>) -> Poll<Result<T, ssl::Error>> {
+fn cvt_ossl<T>(r: Result<T, ssl::Error>, pending_verify: bool) -> Poll<Result<T, ssl::Error>> {
     match r {
         Ok(v) => Poll::Ready(Ok(v)),
         Err(e) => match e.code() {
             ErrorCode::WANT_READ | ErrorCode::WANT_WRITE => Poll::Pending,
+            // Only an outstanding asynchronous certificate verification job wakes the task
+            // waker set in `with_handshake_context` once it is done; a synchronous custom
+            // verify callback that itself returns `Retry` has no such job and would never be
+            // woken, so its error surfaces instead.
+            ErrorCode::WANT_CERTIFICATE_VERIFY if pending_verify => Poll::Pending,
             _ => Poll::Ready(Err(e)),
         },
     }
@@ -118,7 +137,7 @@ impl<S: AsyncRead + AsyncWrite> SslStream<S> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Result<(), ssl::Error>> {
-        self.with_context(cx, |s| cvt_ossl(s.connect()))
+        self.with_handshake_context(cx, |s| s.connect())
     }
 
     #[inline]
@@ -130,7 +149,7 @@ impl<S: AsyncRead + AsyncWrite> SslStream<S> {
     #[inline]
     /// Like [`SslStream::accept`](ssl::SslStream::accept).
     pub fn poll_accept(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), ssl::Error>> {
-        self.with_context(cx, |s| cvt_ossl(s.accept()))
+        self.with_handshake_context(cx, |s| s.accept())
     }
 
     #[inline]
@@ -145,13 +164,35 @@ impl<S: AsyncRead + AsyncWrite> SslStream<S> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Result<(), ssl::Error>> {
-        self.with_context(cx, |s| cvt_ossl(s.do_handshake()))
+        self.with_handshake_context(cx, |s| s.do_handshake())
     }
 
     #[inline]
     /// A convenience method wrapping [`poll_do_handshake`](Self::poll_do_handshake).
     pub async fn do_handshake(mut self: Pin<&mut Self>) -> Result<(), ssl::Error> {
         future::poll_fn(|cx| self.as_mut().poll_do_handshake(cx)).await
+    }
+
+    /// Drives the handshake with `f`. The task's waker is the `Ssl`'s task waker meanwhile, so
+    /// that an asynchronous certificate verification
+    /// ([`SslContextBuilder::set_async_default_verify`](ssl::SslContextBuilder::set_async_default_verify))
+    /// wakes the task when it is done.
+    fn with_handshake_context<F>(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        f: F,
+    ) -> Poll<Result<(), ssl::Error>>
+    where
+        F: FnOnce(&mut SslStreamCore<StreamWrapper<S>>) -> Result<(), ssl::Error>,
+    {
+        let waker = cx.waker().clone();
+        self.with_context(cx, |s| {
+            s.ssl_mut().set_task_waker(Some(waker));
+            let r = f(s);
+            let pending_verify = s.ssl_mut().has_pending_certificate_verification();
+            s.ssl_mut().set_task_waker(None);
+            cvt_ossl(r, pending_verify)
+        })
     }
 }
 

@@ -112,7 +112,7 @@ fn callback() {
     let server = Server::builder().build();
 
     let mut client = server.client();
-    let expected = "59172d9313e84459bcff27f967e79e6e9217e584";
+    let expected = "d93f662e138c72f171a50d92eddb235adf5f88ba";
     client
         .ctx()
         .set_verify_callback(SslVerifyMode::PEER, move |_, x509| {
@@ -134,7 +134,7 @@ fn ssl_callback() {
     let server = Server::builder().build();
 
     let mut client = server.client().build().builder();
-    let expected = "59172d9313e84459bcff27f967e79e6e9217e584";
+    let expected = "d93f662e138c72f171a50d92eddb235adf5f88ba";
     client
         .ssl()
         .set_verify_callback(SslVerifyMode::PEER, move |_, x509| {

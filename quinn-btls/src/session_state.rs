@@ -16,7 +16,9 @@ use std::ffi::c_int;
 use std::io::Cursor;
 use std::result::Result as StdResult;
 use std::slice;
-use std::sync::LazyLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex, PoisonError};
+use std::task::{Poll, Wake, Waker};
 use tracing::{error, trace, warn};
 
 pub(crate) static QUIC_METHOD: bffi::SSL_QUIC_METHOD = bffi::SSL_QUIC_METHOD {
@@ -41,15 +43,28 @@ pub(crate) struct SessionState {
     side: Side,
     alert: Option<TransportError>,
     next_secrets: Option<Secrets>,
-    keys_updated: bool,
     read_level: Level,
     write_level: Level,
     levels: [LevelState; Level::NUM_LEVELS],
     handshaking: bool,
+
+    /// The task waker of a client's Ssl. An asynchronous certificate verification wakes it
+    /// when it is done.
+    verify_waker: Option<Arc<VerifyWaker>>,
+    /// Whether the handshake waits for an asynchronous certificate verification.
+    verify_pending: bool,
 }
 
 impl SessionState {
-    pub(crate) fn new(ssl: Ssl, side: Side, version: QuicVersion) -> Result<Box<Self>> {
+    pub(crate) fn new(mut ssl: Ssl, side: Side, version: QuicVersion) -> Result<Box<Self>> {
+        // Clients support asynchronous certificate verification
+        // (SslContextBuilder::set_async_default_verify), which needs a task waker.
+        let verify_waker = side.is_client().then(|| {
+            let waker = Arc::new(VerifyWaker::default());
+            ssl.set_task_waker(Some(Waker::from(waker.clone())));
+            waker
+        });
+
         let levels = [
             LevelState::new(version, Level::Initial, &ssl),
             LevelState::new(version, Level::EarlyData, &ssl),
@@ -63,12 +78,13 @@ impl SessionState {
             side,
             alert: None,
             next_secrets: None,
-            keys_updated: false,
             read_level: Level::Initial,
             write_level: Level::Initial,
             levels,
             early_data_rejected: false,
             handshaking: true,
+            verify_waker,
+            verify_pending: false,
         });
 
         // Registers this instance as ex data on the underlying Ssl in order to support
@@ -112,13 +128,37 @@ impl SessionState {
 
         let alpn_protocol = self.ssl.selected_alpn_protocol().map(Vec::from);
 
-        if sni_name.is_none() && alpn_protocol.is_none() {
+        // Before the handshake is complete, the data is there once one of the names is; after
+        // it, session_reused is reason enough.
+        if sni_name.is_none() && alpn_protocol.is_none() && self.handshaking {
             None
         } else {
             Some(Box::new(HandshakeData {
                 protocol: alpn_protocol,
                 server_name: sni_name,
+                session_reused: self.ssl.session_reused(),
+                peer_application_settings: self.peer_application_settings(),
             }))
+        }
+    }
+
+    /// The peer's ALPS application settings, if ALPS was negotiated. A client receives them in
+    /// the server's EncryptedExtensions, a server only in the client's last flight.
+    fn peer_application_settings(&self) -> Option<Vec<u8>> {
+        if self.side.is_server() && self.handshaking {
+            return None;
+        }
+        unsafe {
+            if bffi::SSL_has_application_settings(self.ssl.as_ptr()) != 1 {
+                return None;
+            }
+            let mut data = std::ptr::null();
+            let mut len = 0;
+            bffi::SSL_get0_peer_application_settings(self.ssl.as_ptr(), &mut data, &mut len);
+            if len == 0 {
+                return Some(Vec::new());
+            }
+            Some(slice::from_raw_parts(data, len).to_vec())
         }
     }
 
@@ -156,6 +196,34 @@ impl SessionState {
         self.advance_handshake()
     }
 
+    /// Implements [crypto::Session::poll_handshake]: `Pending` while the handshake waits for an
+    /// asynchronous certificate verification, which wakes `waker` when it is done. Then the
+    /// handshake continues, and its messages are left for [Self::write_handshake].
+    pub(crate) fn poll_handshake(&mut self, waker: &Waker) -> Poll<StdResult<(), TransportError>> {
+        if let Err(e) = self.check_alert() {
+            return Poll::Ready(Err(e));
+        }
+        let Some(verify_waker) = &self.verify_waker else {
+            return Poll::Ready(Ok(()));
+        };
+        if !self.verify_pending {
+            return Poll::Ready(Ok(()));
+        }
+        // Register before looking, so that a verification that finishes in between wakes `waker`.
+        verify_waker.register(waker);
+        if !verify_waker.take() {
+            return Poll::Pending;
+        }
+        if let Err(e) = self.advance_handshake() {
+            return Poll::Ready(Err(e));
+        }
+        if self.verify_pending {
+            Poll::Pending
+        } else {
+            Poll::Ready(Ok(()))
+        }
+    }
+
     #[inline]
     pub(crate) fn write_handshake(&mut self, buf: &mut Vec<u8>) -> Option<crypto::Keys> {
         // Write all available data at the current write level.
@@ -165,53 +233,30 @@ impl SessionState {
             write_state.write_buffer.clear();
         }
 
-        // Advance to the next write level.
-        let ssl_engine_write_level = self.ssl.quic_write_level();
+        // Advance to the next write level once BoringSSL has moved past the current one. Once
+        // the application keys have been returned, there is no further level.
         let next_write_level = self.write_level.next();
-        if next_write_level != self.write_level && next_write_level <= ssl_engine_write_level {
-            self.write_level = next_write_level;
-
-            // Indicate that we're updating the keys.
-            self.keys_updated = true;
+        if next_write_level == self.write_level || next_write_level > self.ssl.quic_write_level() {
+            return None;
         }
 
-        let out = if self.keys_updated {
-            self.keys_updated = false;
+        // Quinn takes the keys for both directions at once, but BoringSSL does not always
+        // install both secrets of a level together: a server gets its application write secret
+        // after sending its Finished and the read secret only after the client's Finished.
+        // Until both are there, stay at the current level. Messages BoringSSL queues for the
+        // next level in the meantime (e.g. half-RTT tickets) stay buffered and are written
+        // after the keys have been returned, so they end up in the right packet space.
+        let secrets = self.level_state(next_write_level).builder.build()?;
+        self.write_level = next_write_level;
 
-            if self.next_secrets.is_some() {
-                // Once we've returned the application secrets, stop sending key updates.
-                None
-            } else {
-                // Determine if we're transitioning to the application-level keys.
-                let is_app = self.write_level == Level::Application;
+        if next_write_level == Level::Application {
+            // Keep the next generation of application secrets for next_1rtt_keys.
+            let mut next_app_secrets = secrets;
+            next_app_secrets.update().unwrap();
+            self.next_secrets = Some(next_app_secrets);
+        }
 
-                // Build the secrets.
-                let secrets = self
-                    .level_state(self.write_level)
-                    .builder
-                    .build()
-                    .unwrap_or_else(|| {
-                        panic!("failed building secrets for level {:?}", self.write_level)
-                    });
-
-                if is_app {
-                    // We've transitioned to the application level, we need to set the
-                    // next (i.e. application) secrets for use from next_1rtt_keys.
-
-                    // Copy the secrets and advance them to the next application secrets.
-                    let mut next_app_secrets = secrets;
-                    next_app_secrets.update().unwrap();
-
-                    self.next_secrets = Some(next_app_secrets);
-                }
-
-                Some(secrets.keys().unwrap())
-            }
-        } else {
-            None
-        };
-
-        out.map(|keys| keys.as_crypto().unwrap())
+        Some(secrets.keys().unwrap().as_crypto().unwrap())
     }
 
     #[inline]
@@ -250,6 +295,35 @@ impl SessionState {
         Some((header_key, packet_key))
     }
 
+    /// Switches the handshake to `version` before any of the peer's handshake data arrived
+    /// (compatible version negotiation, RFC 9368): the Initial keys and every key derived from
+    /// then on use it. 0-RTT keys keep the original version, in which alone 0-RTT packets are
+    /// sent (RFC 9369, section 4.1).
+    ///
+    /// Fails if keys of later levels are already there, or if `version` puts the transport
+    /// parameters, which the ClientHello already carries, under another codepoint.
+    pub(crate) fn set_version(
+        &mut self,
+        version: QuicVersion,
+    ) -> StdResult<(), crypto::UnsupportedVersion> {
+        let has_secrets = |level: Level| {
+            let builder = &self.level_state(level).builder;
+            builder.local_secret.is_some() || builder.remote_secret.is_some()
+        };
+        if version.uses_legacy_extension() != self.version.uses_legacy_extension()
+            || has_secrets(Level::Handshake)
+            || has_secrets(Level::Application)
+        {
+            return Err(crypto::UnsupportedVersion);
+        }
+        self.version = version;
+        // The levels keep the version of their keys.
+        for level in [Level::Handshake, Level::Application] {
+            self.level_state_mut(level).builder.version = version;
+        }
+        Ok(())
+    }
+
     #[inline]
     pub(crate) fn initial_keys(&self, dcid: &ConnectionId, side: Side) -> crypto::Keys {
         let secrets = Secrets::initial(self.version, dcid, side).unwrap();
@@ -277,6 +351,15 @@ impl SessionState {
 
             // Update the state of the handshake.
             self.handshaking = self.ssl.is_handshaking();
+            self.verify_pending = rc.value() == bffi::SSL_ERROR_WANT_CERTIFICATE_VERIFY;
+            if !self.verify_pending {
+                // A verification that finished without the handshake waiting for it (its job
+                // ran inline, or read_handshake picked up its result) leaves the waker woken;
+                // that must not count for a later wait.
+                if let Some(verify_waker) = &self.verify_waker {
+                    verify_waker.take();
+                }
+            }
 
             self.check_alert()?;
             self.check_ssl_error(rc)?;
@@ -358,9 +441,6 @@ impl SessionState {
 
         // Advance the currently active read level.
         self.read_level = level;
-
-        // Indicate that the next call to write_handshake should generate new keys.
-        self.keys_updated = true;
         Ok(())
     }
 
@@ -531,6 +611,47 @@ impl SessionState {
     pub(crate) extern "C" fn info_callback(ssl: *const bffi::SSL, type_: c_int, value: c_int) {
         let inst = Self::get_instance(ssl);
         inst.on_info(type_, value);
+    }
+}
+
+/// The task waker of a client's Ssl: records that an asynchronous certificate verification has
+/// finished and wakes the connection's driver.
+#[derive(Default)]
+struct VerifyWaker {
+    finished: AtomicBool,
+    /// The waker of the latest [SessionState::poll_handshake].
+    driver: Mutex<Option<Waker>>,
+}
+
+impl VerifyWaker {
+    fn register(&self, waker: &Waker) {
+        let mut driver = self.driver.lock().unwrap_or_else(PoisonError::into_inner);
+        if !driver.as_ref().is_some_and(|w| w.will_wake(waker)) {
+            *driver = Some(waker.clone());
+        }
+    }
+
+    /// Whether the waker was woken since the last call.
+    fn take(&self) -> bool {
+        self.finished.swap(false, Ordering::SeqCst)
+    }
+}
+
+impl Wake for VerifyWaker {
+    fn wake(self: Arc<Self>) {
+        self.wake_by_ref();
+    }
+
+    fn wake_by_ref(self: &Arc<Self>) {
+        self.finished.store(true, Ordering::SeqCst);
+        let driver = self
+            .driver
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        if let Some(driver) = driver {
+            driver.wake();
+        }
     }
 }
 
