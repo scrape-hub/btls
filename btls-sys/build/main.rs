@@ -841,6 +841,9 @@ fn generate_bindings(config: &Config) {
         .layout_tests(config.env.debug.is_some() && config.env.write_bindings.is_none())
         .prepend_enum_name(true)
         .blocklist_type("max_align_t") // Not supported by bindgen on all targets, not used by BoringSSL
+        // BoringSSL's own headers and what they use: the macros of the system headers differ
+        // between SDK versions, which would make the prebuilt bindings depend on the build machine.
+        .allowlist_file(r".*[/\\]openssl[/\\][^/\\]+\.h")
         .clang_args(get_extra_clang_args_for_bindgen(config))
         .clang_arg("-I")
         .clang_arg(include_path.display().to_string());

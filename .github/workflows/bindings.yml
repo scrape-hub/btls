@@ -62,13 +62,15 @@ jobs:
           rustup target add ${{ matrix.target }}
           BTLS_WRITE_BINDINGS="$PWD/btls-sys/bindings" cargo check -p btls-sys --target ${{ matrix.target }}
 
-      # JavaScript actions do not run in Alpine containers, so only this step runs in one.
+      # JavaScript actions do not run in Alpine containers, so only this step runs in one. A build
+      # script linked statically (musl's default) cannot load libclang.
       - name: Generate in Alpine
         if: ${{ matrix.alpine }}
         run: |
           docker run --rm -v "$PWD":/io -w /io rust:1-alpine sh -euc '
             apk add -q clang-dev musl-dev
-            DOCS_RS=1 BTLS_WRITE_BINDINGS=/io/btls-sys/bindings cargo check -p btls-sys
+            RUSTFLAGS="-C target-feature=-crt-static" DOCS_RS=1 BTLS_WRITE_BINDINGS=/io/btls-sys/bindings \
+              cargo check -p btls-sys
           '
 
       - uses: actions/upload-artifact@v7
