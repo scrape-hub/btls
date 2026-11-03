@@ -13,6 +13,7 @@ use crate::config::Config;
 use crate::prefix::{prefix_symbols, PrefixCallback};
 
 mod config;
+mod patch;
 mod prefix;
 
 fn should_use_cmake_cross_compilation(config: &Config) -> bool {
@@ -550,15 +551,7 @@ fn ensure_patches_applied(config: &Config) -> io::Result<()> {
     }
 
     let mut lock_file = LockFile::open(&config.out_dir.join(".patch_lock"))?;
-    let src_path = get_boringssl_source_path(config);
-    let has_git = src_path.join(".git").exists();
-
     lock_file.lock()?;
-
-    // NOTE: init git in the copied files, so we can apply patches
-    if !has_git {
-        run_command(Command::new("git").arg("init").current_dir(src_path))?;
-    }
 
     println!("cargo:warning=applying post quantum crypto patch to boringssl");
     apply_patch(config, "boring-pq.patch")?;
@@ -613,33 +606,15 @@ fn ensure_patches_applied(config: &Config) -> io::Result<()> {
     Ok(())
 }
 
+/// Applies `patches/<patch_name>` to the copied BoringSSL source, without git.
 fn apply_patch(config: &Config, patch_name: &str) -> io::Result<()> {
     let src_path = get_boringssl_source_path(config);
-    #[cfg(not(windows))]
-    let cmd_path = config
-        .manifest_dir
-        .join("patches")
-        .join(patch_name)
-        .canonicalize()?;
-
-    #[cfg(windows)]
-    let cmd_path = config.manifest_dir.join("patches").join(patch_name);
-
-    let mut args = vec!["apply", "-v", "--whitespace=fix"];
-
+    let patch_path = config.manifest_dir.join("patches").join(patch_name);
+    let text = fs::read_to_string(&patch_path)?;
     // non-bazel versions of BoringSSL have no src/ dir
-    if config.is_bazel {
-        args.push("-p2");
-    }
-
-    run_command(
-        Command::new("git")
-            .args(&args)
-            .arg(cmd_path)
-            .current_dir(src_path),
-    )?;
-
-    Ok(())
+    let strip = if config.is_bazel { 2 } else { 1 };
+    patch::apply(src_path, &text, strip)
+        .map_err(|e| io::Error::new(e.kind(), format!("{patch_name}: {e}")))
 }
 
 fn run_command(command: &mut Command) -> io::Result<Output> {
@@ -802,7 +777,36 @@ fn check_include_path(path: PathBuf) -> Result<PathBuf, String> {
     }
 }
 
+/// Bindings generated beforehand for the target (`bindings/<target>.rs`), which spare the build
+/// libclang: for the bundled BoringSSL with its patches, without features that change its headers.
+fn prebuilt_bindings(config: &Config) -> Option<PathBuf> {
+    let env = &config.env;
+    let features = &config.features;
+    if env.write_bindings.is_some()
+        || env.path.is_some()
+        || env.include_path.is_some()
+        || env.source_path.is_some()
+        || features.fips
+        || features.underscore_wildcards
+        || features.prefix_symbols
+    {
+        return None;
+    }
+    let path = config
+        .manifest_dir
+        .join("bindings")
+        .join(format!("{}.rs", config.target));
+    path.is_file().then_some(path)
+}
+
 fn generate_bindings(config: &Config) {
+    if let Some(prebuilt) = prebuilt_bindings(config) {
+        println!("cargo:rerun-if-changed={}", prebuilt.display());
+        fs::copy(&prebuilt, config.out_dir.join("bindings.rs"))
+            .expect("Couldn't copy the prebuilt bindings!");
+        return;
+    }
+
     let include_path = config.env.include_path.clone().unwrap_or_else(|| {
         if let Some(bssl_path) = &config.env.path {
             return check_include_path(bssl_path.join("include"))
@@ -833,7 +837,8 @@ fn generate_bindings(config: &Config) {
         .generate_comments(true)
         .fit_macro_constants(false)
         .size_t_is_usize(true)
-        .layout_tests(config.env.debug.is_some())
+        // Prebuilt bindings are the same for every profile.
+        .layout_tests(config.env.debug.is_some() && config.env.write_bindings.is_none())
         .prepend_enum_name(true)
         .blocklist_type("max_align_t") // Not supported by bindgen on all targets, not used by BoringSSL
         .clang_args(get_extra_clang_args_for_bindgen(config))
@@ -918,6 +923,11 @@ fn generate_bindings(config: &Config) {
         .write(Box::new(&mut source_code))
         .expect("Couldn't serialize bindings!");
     ensure_err_lib_enum_is_named(&mut source_code);
+    if let Some(dir) = &config.env.write_bindings {
+        fs::create_dir_all(dir).expect("Couldn't create the bindings directory!");
+        fs::write(dir.join(format!("{}.rs", config.target)), &source_code)
+            .expect("Couldn't write the prebuilt bindings!");
+    }
     fs::write(config.out_dir.join("bindings.rs"), source_code).expect("Couldn't write bindings!");
 }
 

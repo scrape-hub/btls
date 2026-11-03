@@ -44,6 +44,9 @@ pub(crate) struct Env {
     /// Opt-in to building without NASM on Windows instead of failing the build.
     pub(crate) no_asm: bool,
     pub(crate) docs_rs: bool,
+    /// Generate the bindings with bindgen even where prebuilt ones exist, and write them to this
+    /// directory as `<target>.rs` too: how `bindings/` is filled.
+    pub(crate) write_bindings: Option<PathBuf>,
 }
 
 impl Config {
@@ -192,6 +195,7 @@ impl Env {
             nasm: target_var("CMAKE_ASM_NASM_COMPILER").map(PathBuf::from),
             no_asm: target_var("BORING_BSSL_NO_ASM").is_some(),
             docs_rs: var("DOCS_RS").is_some(),
+            write_bindings: var("BTLS_WRITE_BINDINGS").map(PathBuf::from),
         }
     }
 }

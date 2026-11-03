@@ -1,1 +1,2 @@
 *.toml text eol=lf
+btls-sys/bindings/*.rs linguist-generated=true

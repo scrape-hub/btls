@@ -1,0 +1,83 @@
+name: Prebuilt bindings
+
+# btls-sys/bindings/<target>.rs spare a build libclang. This regenerates them on every target koon
+# ships for (DOCS_RS skips building BoringSSL, so only the headers and libclang are needed) and
+# fails when a checked-in file differs, e.g. after a patch changed a header; the artifact of each
+# job holds its fresh file. x86_64-pc-windows-gnu needs the headers of Rtools and is generated
+# locally (btls-sys/README.md).
+on:
+  pull_request:
+  push:
+    tags: ["koon-*"]
+  workflow_dispatch:
+
+jobs:
+  bindings:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            alpine: true
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            alpine: true
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+          - runner: macos-latest
+            target: x86_64-apple-darwin
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Install libclang
+        if: runner.os == 'Linux' && !matrix.alpine
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev
+
+      - name: Install LLVM
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $llvm = "${env:ProgramFiles}\LLVM\bin"
+          if (-not (Test-Path "$llvm\libclang.dll")) { choco install llvm -y --no-progress }
+          echo "LIBCLANG_PATH=$llvm" >> $env:GITHUB_ENV
+
+      - name: Generate
+        if: ${{ !matrix.alpine }}
+        shell: bash
+        env:
+          DOCS_RS: 1
+        run: |
+          rustup target add ${{ matrix.target }}
+          BTLS_WRITE_BINDINGS="$PWD/btls-sys/bindings" cargo check -p btls-sys --target ${{ matrix.target }}
+
+      # JavaScript actions do not run in Alpine containers, so only this step runs in one.
+      - name: Generate in Alpine
+        if: ${{ matrix.alpine }}
+        run: |
+          docker run --rm -v "$PWD":/io -w /io rust:1-alpine sh -euc '
+            apk add -q clang-dev musl-dev
+            DOCS_RS=1 BTLS_WRITE_BINDINGS=/io/btls-sys/bindings cargo check -p btls-sys
+          '
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bindings-${{ matrix.target }}
+          path: btls-sys/bindings/${{ matrix.target }}.rs
+
+      - name: The checked-in bindings are current
+        shell: bash
+        run: |
+          git add -N btls-sys/bindings
+          git diff --exit-code -- btls-sys/bindings/${{ matrix.target }}.rs
