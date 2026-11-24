@@ -309,6 +309,8 @@ fn set_msvc_config_flags(cmake: &mut cmake::Config) {
 fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
     let src_path = get_boringssl_source_path(config);
     let mut boringssl_cmake = cmake::Config::new(src_path);
+    // Only the ssl and crypto libraries are built: no tests or benchmarks to configure.
+    boringssl_cmake.define("BUILD_TESTING", "OFF");
 
     if config.env.cmake_toolchain_file.is_some() {
         return boringssl_cmake;
