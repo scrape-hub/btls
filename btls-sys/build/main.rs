@@ -206,20 +206,31 @@ fn msvc_lib_subdir(config: &Config) -> Option<&'static str> {
     }
 }
 
-/// Chooses how a native Windows build with MSVC assembles BoringSSL's assembly.
+/// Whether the target is x86 or x86_64 Windows with the GNU toolchain (MinGW, which R uses).
+/// BoringSSL assembles NASM there as for MSVC, and the linker takes NASM's win64 objects.
+fn is_mingw_x86(config: &Config) -> bool {
+    config.target_os == "windows"
+        && config.target_env == "gnu"
+        && matches!(config.target_arch.as_str(), "x86_64" | "x86")
+}
+
+/// Chooses how a Windows build with MSVC, or with MinGW on x86/x86_64, assembles BoringSSL's
+/// assembly.
 ///
 /// On x86 and x86_64 BoringSSL uses NASM, and its CMakeLists.txt fails without it. Pass the
 /// assembler found where CMake itself looks, so that its choice is visible here. Without NASM,
-/// fail the build the way upstream does, unless `BORING_BSSL_NO_ASM` opts into building without
-/// assembly instead: AES-GCM and SHA-2 are then many times slower. On other architectures the
-/// assembly is in GNU syntax, which clang-cl assembles but MSVC does not.
+/// fail an MSVC build the way upstream does, unless `BORING_BSSL_NO_ASM` opts into building
+/// without assembly instead: AES-GCM and SHA-2 are then many times slower. A MinGW build without
+/// NASM builds without assembly, with a warning, as packages built from source on a user's
+/// machine (R's) must not fail for it. On other architectures the assembly is in GNU syntax,
+/// which clang-cl assembles but MSVC does not.
 fn configure_windows_asm(config: &Config, cmake: &mut cmake::Config) {
     match config.target_arch.as_str() {
         "x86_64" | "x86" => match find_nasm(config) {
             Some(nasm) => {
                 cmake.define("CMAKE_ASM_NASM_COMPILER", nasm);
             }
-            None if config.env.no_asm => {
+            None if config.env.no_asm || config.target_env == "gnu" => {
                 println!(
                     "cargo:warning=NASM not found: building BoringSSL without assembly, which \
                      makes AES-GCM and SHA-2 many times slower. Install NASM \
@@ -320,7 +331,7 @@ fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
     }
 
     if config.host == config.target {
-        if config.target_os == "windows" && config.target_env == "msvc" {
+        if (config.target_os == "windows" && config.target_env == "msvc") || is_mingw_x86(config) {
             configure_windows_asm(config, &mut boringssl_cmake);
         }
         return boringssl_cmake;
@@ -403,6 +414,11 @@ fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
             let cflag = format!("{bitcode_cflag} {target_cflag}");
             boringssl_cmake.define("CMAKE_ASM_FLAGS", &cflag);
             boringssl_cmake.cflag(&cflag);
+        }
+
+        "windows" if config.host.contains("windows") && is_mingw_x86(config) => {
+            // An MSVC host building for MinGW, as rustup's default toolchain does for R.
+            configure_windows_asm(config, &mut boringssl_cmake);
         }
 
         "windows" if config.host.contains("windows") => {
