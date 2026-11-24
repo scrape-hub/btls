@@ -187,8 +187,9 @@ async fn async_verification() {
             job_started.send(()).unwrap();
             ran.recv_timeout(Duration::from_secs(10))
                 .expect("the runtime did not run while the certificate was verified");
-            job();
+            // Before job(): it lets the handshake finish, and with it the assertion below.
             *done.lock().unwrap() = true;
+            job();
         });
     });
     let connector = connector.build();
