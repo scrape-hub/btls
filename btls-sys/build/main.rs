@@ -578,9 +578,8 @@ fn ensure_patches_applied(config: &Config) -> io::Result<()> {
     // The patches from here to quic-ech-outer-transport-params.patch are stacked: each applies on
     // top of the ones before it, in this order, and several change the same files (ssl.h,
     // extensions.cc, internal.h, ssl_lib.cc, ssl_privkey.cc; their `index` lines chain). When one
-    // of them is dropped, e.g. the grease-sigalgs.patch or server-padding.patch backport once the
-    // BoringSSL submodule contains the change, regenerate the ones after it on the new tree, in
-    // this order.
+    // of them is dropped or the BoringSSL submodule moves, regenerate the ones after it on the new
+    // tree, in this order.
     println!("cargo:warning=applying ML-DSA verify prefs patch to boringssl");
     apply_patch(config, "mldsa-verify-prefs.patch")?;
 
@@ -602,17 +601,14 @@ fn ensure_patches_applied(config: &Config) -> io::Result<()> {
     println!("cargo:warning=applying verify cert store getters patch to boringssl");
     apply_patch(config, "verify-cert-store-getters.patch")?;
 
-    println!("cargo:warning=applying server padding patch to boringssl");
-    apply_patch(config, "server-padding.patch")?;
-
     println!("cargo:warning=applying QUIC ECH outer transport params patch to boringssl");
     apply_patch(config, "quic-ech-outer-transport-params.patch")?;
 
+    println!("cargo:warning=applying F5 padding patch to boringssl");
+    apply_patch(config, "f5-padding.patch")?;
+
     println!("cargo:warning=applying loongarch patch to boringssl");
     apply_patch(config, "boringssl-loongarch.patch")?;
-
-    println!("cargo:warning=applying windows cross compile patch to boringssl");
-    apply_patch(config, "boringssl-windows.patch")?;
 
     if config.features.underscore_wildcards {
         println!("cargo:warning=applying underscore wildcards patch to boringssl");

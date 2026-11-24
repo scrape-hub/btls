@@ -142,7 +142,7 @@ where
 }
 pub const OPENSSL_VERSION_NUMBER: i32 = 269488255;
 pub const SSLEAY_VERSION_NUMBER: i32 = 269488255;
-pub const BORINGSSL_API_VERSION: i32 = 37;
+pub const BORINGSSL_API_VERSION: i32 = 44;
 pub const AES_ENCRYPT: i32 = 1;
 pub const AES_DECRYPT: i32 = 0;
 pub const AES_MAXNR: i32 = 14;
@@ -342,6 +342,7 @@ pub const V_ASN1_EXTERNAL: i32 = 8;
 pub const V_ASN1_REAL: i32 = 9;
 pub const V_ASN1_ENUMERATED: i32 = 10;
 pub const V_ASN1_UTF8STRING: i32 = 12;
+pub const V_ASN1_RELATIVE_OID: i32 = 13;
 pub const V_ASN1_SEQUENCE: i32 = 16;
 pub const V_ASN1_SET: i32 = 17;
 pub const V_ASN1_NUMERICSTRING: i32 = 18;
@@ -382,7 +383,6 @@ pub const B_ASN1_SEQUENCE: i32 = 65536;
 pub const ASN1_BOOLEAN_FALSE: i32 = 0;
 pub const ASN1_BOOLEAN_TRUE: i32 = 255;
 pub const ASN1_BOOLEAN_NONE: i32 = -1;
-pub const ASN1_STRING_FLAG_BITS_LEFT: i32 = 8;
 pub const MBSTRING_FLAG: i32 = 4096;
 pub const MBSTRING_UTF8: i32 = 4096;
 pub const MBSTRING_ASC: i32 = 4097;
@@ -405,6 +405,7 @@ pub const ASN1_STRFLGS_DUMP_ALL: i32 = 128;
 pub const ASN1_STRFLGS_DUMP_UNKNOWN: i32 = 256;
 pub const ASN1_STRFLGS_DUMP_DER: i32 = 512;
 pub const ASN1_STRFLGS_RFC2253: i32 = 791;
+pub const ASN1_STRING_FLAG_BITS_LEFT: i32 = 8;
 pub const ASN1_R_ASN1_LENGTH_MISMATCH: i32 = 100;
 pub const ASN1_R_AUX_ERROR: i32 = 101;
 pub const ASN1_R_BAD_GET_ASN1_OBJECT_CALL: i32 = 102;
@@ -597,6 +598,8 @@ pub const ED25519_PUBLIC_KEY_LEN: i32 = 32;
 pub const ED25519_SIGNATURE_LEN: i32 = 64;
 pub const SPAKE2_MAX_MSG_SIZE: i32 = 32;
 pub const SPAKE2_MAX_KEY_SIZE: i32 = 64;
+pub const CPACE_MSG_LEN: i32 = 32;
+pub const CPACE_SHARED_SECRET_LEN: i32 = 64;
 pub const DES_ENCRYPT: i32 = 1;
 pub const DES_DECRYPT: i32 = 0;
 pub const DES_CBC_MODE: i32 = 0;
@@ -605,13 +608,14 @@ pub const HKDF_R_OUTPUT_TOO_LARGE: i32 = 100;
 pub const EVP_AEAD_MAX_KEY_LENGTH: i32 = 80;
 pub const EVP_AEAD_MAX_NONCE_LENGTH: i32 = 24;
 pub const EVP_AEAD_MAX_OVERHEAD: i32 = 64;
+pub const EVP_AEAD_MAX_OPEN_OVERHEAD: i32 = 320;
 pub const EVP_AEAD_DEFAULT_TAG_LENGTH: i32 = 0;
 pub const EVP_MAX_MD_SIZE: i32 = 64;
-pub const EVP_MAX_MD_BLOCK_SIZE: i32 = 128;
+pub const EVP_MAX_MD_BLOCK_SIZE: i32 = 136;
 pub const EVP_MD_FLAG_DIGALGID_ABSENT: i32 = 2;
 pub const EVP_MD_FLAG_XOF: i32 = 4;
 pub const EVP_MD_CTX_FLAG_NON_FIPS_ALLOW: i32 = 0;
-pub const EVP_MAX_MD_DATA_SIZE: i32 = 208;
+pub const EVP_MAX_MD_DATA_SIZE: i32 = 240;
 pub const DIGEST_R_INPUT_NOT_INITIALIZED: i32 = 100;
 pub const DIGEST_R_DECODE_ERROR: i32 = 101;
 pub const DIGEST_R_UNKNOWN_HASH: i32 = 102;
@@ -624,6 +628,7 @@ pub const EVP_HPKE_MAX_PUBLIC_KEY_LENGTH: i32 = 1568;
 pub const EVP_HPKE_MAX_PRIVATE_KEY_LENGTH: i32 = 64;
 pub const EVP_HPKE_MAX_ENC_LENGTH: i32 = 1568;
 pub const EVP_HPKE_HKDF_SHA256: i32 = 1;
+pub const EVP_HPKE_HKDF_SHA384: i32 = 2;
 pub const EVP_HPKE_AES_128_GCM: i32 = 1;
 pub const EVP_HPKE_AES_256_GCM: i32 = 2;
 pub const EVP_HPKE_CHACHA20_POLY1305: i32 = 3;
@@ -820,7 +825,7 @@ pub const EVP_R_NO_NID_FOR_CURVE: i32 = 122;
 pub const EVP_R_NO_OPERATION_SET: i32 = 123;
 pub const EVP_R_NO_PARAMETERS_SET: i32 = 124;
 pub const EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE: i32 = 125;
-pub const EVP_R_OPERATON_NOT_INITIALIZED: i32 = 126;
+pub const EVP_R_OPERATION_NOT_INITIALIZED: i32 = 126;
 pub const EVP_R_UNKNOWN_PUBLIC_KEY_TYPE: i32 = 127;
 pub const EVP_R_UNSUPPORTED_ALGORITHM: i32 = 128;
 pub const EVP_R_UNSUPPORTED_PUBLIC_KEY_TYPE: i32 = 129;
@@ -834,6 +839,11 @@ pub const EVP_R_EMPTY_PSK: i32 = 136;
 pub const EVP_R_INVALID_BUFFER_SIZE: i32 = 137;
 pub const EVP_R_EXPECTING_A_DH_KEY: i32 = 138;
 pub const EVP_R_PRIVATE_KEY_WAS_NOT_SEED: i32 = 139;
+pub const EVP_R_MISSING_PUBLIC_KEY: i32 = 140;
+pub const EVP_R_INVALID_CIPHERTEXT_LENGTH: i32 = 141;
+pub const EVP_R_INVALID_SECRET_LENGTH: i32 = 142;
+pub const EVP_R_INVALID_ENTROPY_LENGTH: i32 = 143;
+pub const EVP_R_OPERATON_NOT_INITIALIZED: i32 = 126;
 pub const SN_undef: &[u8; 6] = b"UNDEF\0";
 pub const LN_undef: &[u8; 10] = b"undefined\0";
 pub const NID_undef: i32 = 0;
@@ -3115,6 +3125,8 @@ pub const NID_kx_any: i32 = 957;
 pub const SN_auth_any: &[u8; 8] = b"AuthANY\0";
 pub const LN_auth_any: &[u8; 9] = b"auth-any\0";
 pub const NID_auth_any: i32 = 958;
+pub const SN_P256Kyber768Draft00: &[u8; 20] = b"P256Kyber768Draft00\0";
+pub const NID_P256Kyber768Draft00: i32 = 959;
 pub const SN_ED448: &[u8; 6] = b"ED448\0";
 pub const NID_ED448: i32 = 960;
 pub const SN_X448: &[u8; 5] = b"X448\0";
@@ -3144,8 +3156,24 @@ pub const NID_ML_DSA_87: i32 = 969;
 pub const SN_ML_KEM_768: &[u8; 18] = b"id-alg-ml-kem-768\0";
 pub const LN_ML_KEM_768: &[u8; 11] = b"ML-KEM-768\0";
 pub const NID_ML_KEM_768: i32 = 970;
-pub const SN_P256Kyber768Draft00: &[u8; 20] = b"P256Kyber768Draft00\0";
-pub const NID_P256Kyber768Draft00: i32 = 971;
+pub const SN_X_Wing: &[u8; 7] = b"X-Wing\0";
+pub const NID_X_Wing: i32 = 972;
+pub const SN_SLH_DSA_SHA2_128s: &[u8; 21] = b"id-slh-dsa-sha2-128s\0";
+pub const LN_SLH_DSA_SHA2_128s: &[u8; 18] = b"SLH-DSA-SHA2-128s\0";
+pub const NID_SLH_DSA_SHA2_128s: i32 = 973;
+pub const SN_SLH_DSA_SHAKE_256f: &[u8; 22] = b"id-slh-dsa-shake-256f\0";
+pub const LN_SLH_DSA_SHAKE_256f: &[u8; 19] = b"SLH-DSA-SHAKE-256f\0";
+pub const NID_SLH_DSA_SHAKE_256f: i32 = 974;
+pub const SN_SLH_DSA_SHA2_128s_WITH_SHA256: &[u8; 38] = b"id-hash-slh-dsa-sha2-128s-with-sha256\0";
+pub const LN_SLH_DSA_SHA2_128s_WITH_SHA256: &[u8; 30] = b"SLH-DSA-SHA2-128s-WITH-SHA256\0";
+pub const NID_SLH_DSA_SHA2_128s_WITH_SHA256: i32 = 975;
+pub const SN_alg_mtcProof: &[u8; 13] = b"alg-mtcProof\0";
+pub const NID_alg_mtcProof: i32 = 976;
+pub const SN_rdna_trustAnchorID: &[u8; 19] = b"rdna-trustAnchorID\0";
+pub const NID_rdna_trustAnchorID: i32 = 977;
+pub const SN_pe_mtcCertificationAuthority_SHA256: &[u8; 36] =
+    b"pe-mtcCertificationAuthority-SHA256\0";
+pub const NID_pe_mtcCertificationAuthority_SHA256: i32 = 978;
 pub const SN_ffdhe2048: &[u8; 10] = b"ffdhe2048\0";
 pub const NID_ffdhe2048: i32 = 972;
 pub const SN_ffdhe3072: &[u8; 10] = b"ffdhe3072\0";
@@ -3162,6 +3190,9 @@ pub const EVP_PKEY_DH: i32 = 28;
 pub const EVP_PKEY_ML_DSA_44: i32 = 967;
 pub const EVP_PKEY_ML_DSA_65: i32 = 968;
 pub const EVP_PKEY_ML_DSA_87: i32 = 969;
+pub const EVP_PKEY_ML_KEM_768: i32 = 970;
+pub const EVP_PKEY_ML_KEM_1024: i32 = 966;
+pub const EVP_PKEY_XWING: i32 = 972;
 pub const EVP_PKEY_RSA2: i32 = 19;
 pub const EVP_PKEY_X448: i32 = 961;
 pub const EVP_PKEY_ED448: i32 = 960;
@@ -3181,6 +3212,7 @@ pub const CBS_ASN1_NULL: i32 = 5;
 pub const CBS_ASN1_OBJECT: i32 = 6;
 pub const CBS_ASN1_ENUMERATED: i32 = 10;
 pub const CBS_ASN1_UTF8STRING: i32 = 12;
+pub const CBS_ASN1_RELATIVE_OID: i32 = 13;
 pub const CBS_ASN1_SEQUENCE: i32 = 536870928;
 pub const CBS_ASN1_SET: i32 = 536870929;
 pub const CBS_ASN1_NUMERICSTRING: i32 = 18;
@@ -3215,7 +3247,7 @@ pub const PKCS7_R_BAD_PKCS7_VERSION: i32 = 100;
 pub const PKCS7_R_NOT_PKCS7_SIGNED_DATA: i32 = 101;
 pub const PKCS7_R_NO_CERTIFICATES_INCLUDED: i32 = 102;
 pub const PKCS7_R_NO_CRLS_INCLUDED: i32 = 103;
-pub const OPENSSL_RSA_MAX_MODULUS_BITS: i32 = 8192;
+pub const OPENSSL_RSA_MAX_MODULUS_BITS: i32 = 16384;
 pub const RSA_PKCS1_PADDING: i32 = 1;
 pub const RSA_NO_PADDING: i32 = 3;
 pub const RSA_PKCS1_OAEP_PADDING: i32 = 4;
@@ -3474,11 +3506,13 @@ pub const X509_V_FLAG_INHIBIT_MAP: i32 = 1024;
 pub const X509_V_FLAG_NOTIFY_POLICY: i32 = 2048;
 pub const X509_V_FLAG_EXTENDED_CRL_SUPPORT: i32 = 4096;
 pub const X509_V_FLAG_USE_DELTAS: i32 = 8192;
-pub const X509_V_FLAG_CHECK_SS_SIGNATURE: i32 = 16384;
-pub const X509_V_FLAG_TRUSTED_FIRST: i32 = 32768;
+pub const X509_V_FLAG_CHECK_SS_SIGNATURE: i32 = 0;
+pub const X509_V_FLAG_TRUSTED_FIRST: i32 = 0;
 pub const X509_V_FLAG_PARTIAL_CHAIN: i32 = 524288;
-pub const X509_V_FLAG_NO_ALT_CHAINS: i32 = 1048576;
+pub const X509_V_FLAG_NO_ALT_CHAINS: i32 = 0;
 pub const X509_V_FLAG_NO_CHECK_TIME: i32 = 2097152;
+pub const X509_V_FLAG_ALLOW_TIMEZONE_OFFSET: i32 = 16777216;
+pub const X509_V_FLAG_USE_MTC_DRAFT_PLANTS_07: i32 = 4194304;
 pub const X509_CHECK_FLAG_NO_WILDCARDS: i32 = 2;
 pub const X509_CHECK_FLAG_NEVER_CHECK_SUBJECT: i32 = 32;
 pub const X509_PURPOSE_SSL_CLIENT: i32 = 1;
@@ -3595,6 +3629,8 @@ pub const X509_R_NO_CERTIFICATE_FOUND: i32 = 141;
 pub const X509_R_NO_CERTIFICATE_OR_CRL_FOUND: i32 = 142;
 pub const X509_R_NO_CRL_FOUND: i32 = 143;
 pub const X509_R_INVALID_POLICY_EXTENSION: i32 = 144;
+pub const X509_R_INVALID_MTC_CA: i32 = 145;
+pub const X509_R_INVALID_MTC_PROOF: i32 = 146;
 pub const PKCS12_DEFAULT_ITER: i32 = 2048;
 pub const PKCS8_R_BAD_PKCS12_DATA: i32 = 100;
 pub const PKCS8_R_BAD_PKCS12_VERSION: i32 = 101;
@@ -3662,6 +3698,7 @@ pub const MD4_CBLOCK: i32 = 64;
 pub const MD4_DIGEST_LENGTH: i32 = 16;
 pub const MD5_CBLOCK: i32 = 64;
 pub const MD5_DIGEST_LENGTH: i32 = 16;
+pub const MD5_STATE_MAX_BYTES: i32 = 87;
 pub const MLKEM768_PUBLIC_KEY_BYTES: i32 = 1184;
 pub const MLKEM_SEED_BYTES: i32 = 64;
 pub const MLKEM768_CIPHERTEXT_BYTES: i32 = 1088;
@@ -3679,7 +3716,6 @@ pub const PEM_STRING_X509_TRUSTED: &[u8; 20] = b"TRUSTED CERTIFICATE\0";
 pub const PEM_STRING_X509_REQ_OLD: &[u8; 24] = b"NEW CERTIFICATE REQUEST\0";
 pub const PEM_STRING_X509_REQ: &[u8; 20] = b"CERTIFICATE REQUEST\0";
 pub const PEM_STRING_X509_CRL: &[u8; 9] = b"X509 CRL\0";
-pub const PEM_STRING_EVP_PKEY: &[u8; 16] = b"ANY PRIVATE KEY\0";
 pub const PEM_STRING_PUBLIC: &[u8; 11] = b"PUBLIC KEY\0";
 pub const PEM_STRING_RSA: &[u8; 16] = b"RSA PRIVATE KEY\0";
 pub const PEM_STRING_RSA_PUBLIC: &[u8; 15] = b"RSA PUBLIC KEY\0";
@@ -3696,10 +3732,7 @@ pub const PEM_STRING_DSAPARAMS: &[u8; 15] = b"DSA PARAMETERS\0";
 pub const PEM_STRING_ECDSA_PUBLIC: &[u8; 17] = b"ECDSA PUBLIC KEY\0";
 pub const PEM_STRING_ECPRIVATEKEY: &[u8; 15] = b"EC PRIVATE KEY\0";
 pub const PEM_STRING_CMS: &[u8; 4] = b"CMS\0";
-pub const PEM_TYPE_ENCRYPTED: i32 = 10;
-pub const PEM_TYPE_MIC_ONLY: i32 = 20;
-pub const PEM_TYPE_MIC_CLEAR: i32 = 30;
-pub const PEM_TYPE_CLEAR: i32 = 40;
+pub const PEM_STRING_EVP_PKEY: &[u8; 16] = b"ANY PRIVATE KEY\0";
 pub const PEM_R_BAD_BASE64_DECODE: i32 = 100;
 pub const PEM_R_BAD_DECRYPT: i32 = 101;
 pub const PEM_R_BAD_END_LINE: i32 = 102;
@@ -3716,6 +3749,7 @@ pub const PEM_R_SHORT_HEADER: i32 = 112;
 pub const PEM_R_UNSUPPORTED_CIPHER: i32 = 113;
 pub const PEM_R_UNSUPPORTED_ENCRYPTION: i32 = 114;
 pub const PEM_R_UNSUPPORTED_PROC_TYPE_VERSION: i32 = 115;
+pub const PEM_R_NO_DATA: i32 = 116;
 pub const SSL2_MT_CLIENT_HELLO: i32 = 1;
 pub const SSL2_VERSION: i32 = 2;
 pub const SSL3_CK_RSA_DES_192_CBC3_SHA: i32 = 50331658;
@@ -3816,6 +3850,8 @@ pub const TLSEXT_TYPE_ec_point_formats: i32 = 11;
 pub const TLSEXT_TYPE_signature_algorithms: i32 = 13;
 pub const TLSEXT_TYPE_srtp: i32 = 14;
 pub const TLSEXT_TYPE_application_layer_protocol_negotiation: i32 = 16;
+pub const TLSEXT_TYPE_client_cert_type: i32 = 19;
+pub const TLSEXT_TYPE_server_cert_type: i32 = 20;
 pub const TLSEXT_TYPE_padding: i32 = 21;
 pub const TLSEXT_TYPE_extended_master_secret: i32 = 23;
 pub const TLSEXT_TYPE_quic_transport_parameters_legacy: i32 = 65445;
@@ -3963,8 +3999,6 @@ pub const SSL_ERROR_WANT_PRIVATE_KEY_OPERATION: i32 = 13;
 pub const SSL_ERROR_PENDING_TICKET: i32 = 14;
 pub const SSL_ERROR_EARLY_DATA_REJECTED: i32 = 15;
 pub const SSL_ERROR_WANT_CERTIFICATE_VERIFY: i32 = 16;
-pub const SSL_ERROR_HANDOFF: i32 = 17;
-pub const SSL_ERROR_HANDBACK: i32 = 18;
 pub const SSL_ERROR_WANT_RENEGOTIATE: i32 = 19;
 pub const SSL_ERROR_HANDSHAKE_HINTS_READY: i32 = 20;
 pub const DTLS1_VERSION_MAJOR: i32 = 254;
@@ -3977,9 +4011,11 @@ pub const TLS1_3_VERSION: i32 = 772;
 pub const DTLS1_VERSION: i32 = 65279;
 pub const DTLS1_2_VERSION: i32 = 65277;
 pub const DTLS1_3_VERSION: i32 = 65276;
+pub const SSL_OP_LEGACY_SERVER_CONNECT: i32 = 4;
 pub const SSL_OP_NO_QUERY_MTU: i32 = 4096;
 pub const SSL_OP_NO_TICKET: i32 = 16384;
 pub const SSL_OP_CIPHER_SERVER_PREFERENCE: i32 = 4194304;
+pub const SSL_OP_ALL: i32 = 4;
 pub const SSL_OP_NO_TLSv1: i32 = 67108864;
 pub const SSL_OP_NO_TLSv1_2: i32 = 134217728;
 pub const SSL_OP_NO_TLSv1_1: i32 = 268435456;
@@ -4007,6 +4043,9 @@ pub const SSL_SIGN_RSA_PSS_RSAE_SHA256: i32 = 2052;
 pub const SSL_SIGN_RSA_PSS_RSAE_SHA384: i32 = 2053;
 pub const SSL_SIGN_RSA_PSS_RSAE_SHA512: i32 = 2054;
 pub const SSL_SIGN_ED25519: i32 = 2055;
+pub const SSL_SIGN_ML_DSA_44: i32 = 2308;
+pub const SSL_SIGN_ML_DSA_65: i32 = 2309;
+pub const SSL_SIGN_ML_DSA_87: i32 = 2310;
 pub const SSL_SIGN_RSA_PKCS1_SHA256_LEGACY: i32 = 1056;
 pub const SSL_SIGN_RSA_PKCS1_MD5_SHA1: i32 = 65281;
 pub const SSL_FILETYPE_PEM: i32 = 1;
@@ -4021,36 +4060,37 @@ pub const SSL_CIPHER_ECDHE_RSA_WITH_AES_256_GCM_SHA384: i32 = 49200;
 pub const SSL_CIPHER_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: i32 = 52392;
 pub const SSL_CIPHER_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: i32 = 52393;
 pub const SSL_CIPHER_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256: i32 = 52396;
-pub const SSL_CIPHER_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA: i32 = 49160;
 pub const SSL_CIPHER_ECDHE_ECDSA_WITH_AES_128_CBC_SHA: i32 = 49161;
 pub const SSL_CIPHER_ECDHE_ECDSA_WITH_AES_256_CBC_SHA: i32 = 49162;
-pub const SSL_CIPHER_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA: i32 = 49170;
 pub const SSL_CIPHER_ECDHE_RSA_WITH_AES_128_CBC_SHA: i32 = 49171;
 pub const SSL_CIPHER_ECDHE_RSA_WITH_AES_256_CBC_SHA: i32 = 49172;
 pub const SSL_CIPHER_ECDHE_PSK_WITH_AES_128_CBC_SHA: i32 = 49205;
 pub const SSL_CIPHER_ECDHE_PSK_WITH_AES_256_CBC_SHA: i32 = 49206;
 pub const SSL_CIPHER_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256: i32 = 49187;
-pub const SSL_CIPHER_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384: i32 = 49188;
 pub const SSL_CIPHER_ECDHE_RSA_WITH_AES_128_CBC_SHA256: i32 = 49191;
-pub const SSL_CIPHER_ECDHE_RSA_WITH_AES_256_CBC_SHA384: i32 = 49192;
 pub const SSL_CIPHER_RSA_WITH_AES_128_GCM_SHA256: i32 = 156;
 pub const SSL_CIPHER_RSA_WITH_AES_256_GCM_SHA384: i32 = 157;
 pub const SSL_CIPHER_RSA_WITH_AES_128_CBC_SHA: i32 = 47;
 pub const SSL_CIPHER_RSA_WITH_AES_256_CBC_SHA: i32 = 53;
-pub const SSL_CIPHER_RSA_WITH_AES_128_CBC_SHA256: i32 = 60;
-pub const SSL_CIPHER_RSA_WITH_AES_256_CBC_SHA256: i32 = 61;
 pub const SSL_CIPHER_PSK_WITH_AES_128_CBC_SHA: i32 = 140;
 pub const SSL_CIPHER_PSK_WITH_AES_256_CBC_SHA: i32 = 141;
 pub const SSL_CIPHER_RSA_WITH_3DES_EDE_CBC_SHA: i32 = 10;
-pub const SSL_CIPHER_EMPTY_RENEGOTIATION_INFO_SCSV: i32 = 255;
-pub const SSL_CIPHER_FALLBACK_SCSV: i32 = 22016;
+pub const SSL_CIPHER_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA: i32 = 49160;
+pub const SSL_CIPHER_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA: i32 = 49170;
+pub const SSL_CIPHER_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384: i32 = 49188;
+pub const SSL_CIPHER_ECDHE_RSA_WITH_AES_256_CBC_SHA384: i32 = 49192;
+pub const SSL_CIPHER_RSA_WITH_AES_128_CBC_SHA256: i32 = 60;
+pub const SSL_CIPHER_RSA_WITH_AES_256_CBC_SHA256: i32 = 61;
 pub const SSL_CIPHER_DHE_RSA_WITH_AES_128_CBC_SHA: i32 = 51;
 pub const SSL_CIPHER_DHE_RSA_WITH_AES_256_CBC_SHA: i32 = 57;
 pub const SSL_CIPHER_DHE_RSA_WITH_AES_128_CBC_SHA256: i32 = 103;
 pub const SSL_CIPHER_DHE_RSA_WITH_AES_256_CBC_SHA256: i32 = 107;
 pub const SSL_CIPHER_DHE_RSA_WITH_AES_128_GCM_SHA256: i32 = 158;
 pub const SSL_CIPHER_DHE_RSA_WITH_AES_256_GCM_SHA384: i32 = 159;
+pub const SSL_CIPHER_EMPTY_RENEGOTIATION_INFO_SCSV: i32 = 255;
+pub const SSL_CIPHER_FALLBACK_SCSV: i32 = 22016;
 pub const SSL_DEFAULT_CIPHER_LIST: &[u8; 4] = b"ALL\0";
+pub const SSL_CIPHER_FLAG_EQUAL_PREFERENCE_WITH_NEXT: i32 = 1;
 pub const SSL_MAX_SSL_SESSION_ID_LENGTH: i32 = 32;
 pub const SSL_MAX_MASTER_KEY_LENGTH: i32 = 48;
 pub const SSL_SESS_CACHE_OFF: i32 = 0;
@@ -4078,6 +4118,7 @@ pub const SSL_GROUP_MLKEM1024: i32 = 514;
 pub const SSL_GROUP_P256_KYBER768_DRAFT00: i32 = 65074;
 pub const SSL_GROUP_FFDHE2048: i32 = 256;
 pub const SSL_GROUP_FFDHE3072: i32 = 257;
+pub const SSL_GROUP_FLAG_EQUAL_PREFERENCE_WITH_NEXT: i32 = 1;
 pub const SSL_VERIFY_NONE: i32 = 0;
 pub const SSL_VERIFY_PEER: i32 = 1;
 pub const SSL_VERIFY_FAIL_IF_NO_PEER_CERT: i32 = 2;
@@ -4099,6 +4140,8 @@ pub const SRTP_AEAD_AES_128_GCM: i32 = 7;
 pub const SRTP_AEAD_AES_256_GCM: i32 = 8;
 pub const PSK_MAX_IDENTITY_LEN: i32 = 128;
 pub const PSK_MAX_PSK_LEN: i32 = 256;
+pub const TLSEXT_cert_type_x509: i32 = 0;
+pub const TLSEXT_cert_type_rpk: i32 = 2;
 pub const SSL_PAKE_SPAKE2PLUSV1: i32 = 32150;
 pub const SSL_AD_REASON_OFFSET: i32 = 1000;
 pub const SSL_AD_CLOSE_NOTIFY: i32 = 0;
@@ -4166,11 +4209,9 @@ pub const SSL_MODE_AUTO_RETRY: i32 = 0;
 pub const SSL_MODE_RELEASE_BUFFERS: i32 = 0;
 pub const SSL_MODE_SEND_CLIENTHELLO_TIME: i32 = 0;
 pub const SSL_MODE_SEND_SERVERHELLO_TIME: i32 = 0;
-pub const SSL_OP_ALL: i32 = 0;
 pub const SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION: i32 = 0;
 pub const SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS: i32 = 0;
 pub const SSL_OP_EPHEMERAL_RSA: i32 = 0;
-pub const SSL_OP_LEGACY_SERVER_CONNECT: i32 = 0;
 pub const SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER: i32 = 0;
 pub const SSL_OP_MICROSOFT_SESS_ID_BUG: i32 = 0;
 pub const SSL_OP_MSIE_SSLV2_RSA_PADDING: i32 = 0;
@@ -4245,7 +4286,6 @@ pub const SSL_CURVE_SECP256R1: i32 = 23;
 pub const SSL_CURVE_SECP384R1: i32 = 24;
 pub const SSL_CURVE_SECP521R1: i32 = 25;
 pub const SSL_CURVE_X25519: i32 = 29;
-pub const SSL_CURVE_X25519_KYBER768_DRAFT00: i32 = 25497;
 pub const TLSEXT_nid_unknown: i32 = 16777216;
 pub const SSL_R_APP_DATA_IN_HANDSHAKE: i32 = 100;
 pub const SSL_R_ATTEMPT_TO_REUSE_SESSION_IN_DIFFERENT_CONTEXT: i32 = 101;
@@ -4475,6 +4515,16 @@ pub const SSL_R_UNSUPPORTED_CREDENTIAL_LIST: i32 = 327;
 pub const SSL_R_INVALID_TRUST_ANCHOR_LIST: i32 = 328;
 pub const SSL_R_INVALID_CERTIFICATE_PROPERTY_LIST: i32 = 329;
 pub const SSL_R_DUPLICATE_GROUP: i32 = 330;
+pub const SSL_R_INVALID_PSK_FOR_CONNECTION: i32 = 331;
+pub const SSL_R_NO_SUPPORTED_PSK_MODE: i32 = 332;
+pub const SSL_R_INVALID_CERT_TYPES_LIST: i32 = 333;
+pub const SSL_R_UNSUPPORTED_CERTIFICATE: i32 = 334;
+pub const SSL_R_MISSING_KEY: i32 = 335;
+pub const SSL_R_INVALID_RAW_PUBLIC_KEY: i32 = 336;
+pub const SSL_R_UNUSABLE_ECH_CONFIG_LIST: i32 = 337;
+pub const SSL_R_INVALID_CIPHER_FLAGS: i32 = 338;
+pub const SSL_R_DUPLICATE_CIPHER: i32 = 339;
+pub const SSL_R_INVALID_TRUST_ANCHOR_ID: i32 = 340;
 pub const SSL_R_SSLV3_ALERT_CLOSE_NOTIFY: i32 = 1000;
 pub const SSL_R_SSLV3_ALERT_UNEXPECTED_MESSAGE: i32 = 1010;
 pub const SSL_R_SSLV3_ALERT_BAD_RECORD_MAC: i32 = 1020;
@@ -4509,7 +4559,6 @@ pub const SSL_R_TLSV1_ALERT_UNKNOWN_PSK_IDENTITY: i32 = 1115;
 pub const SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED: i32 = 1116;
 pub const SSL_R_TLSV1_ALERT_NO_APPLICATION_PROTOCOL: i32 = 1120;
 pub const SSL_R_TLSV1_ALERT_ECH_REQUIRED: i32 = 1121;
-pub const SSL_R_PAKE_AND_KEY_SHARE_NOT_ALLOWED: i32 = 1122;
 pub const TRUST_TOKEN_MAX_PRIVATE_KEY_SIZE: i32 = 512;
 pub const TRUST_TOKEN_MAX_PUBLIC_KEY_SIZE: i32 = 512;
 pub const TRUST_TOKEN_R_KEYGEN_FAILURE: i32 = 100;
@@ -4709,6 +4758,12 @@ pub type CONF = conf_st;
 pub type CONF_VALUE = conf_value_st;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct cpace_ctx_st {
+    _unused: [u8; 0],
+}
+pub type CPACE_CTX = cpace_ctx_st;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct crypto_buffer_pool_st {
     _unused: [u8; 0],
 }
@@ -4719,6 +4774,8 @@ pub struct crypto_buffer_st {
     _unused: [u8; 0],
 }
 pub type CRYPTO_BUFFER = crypto_buffer_st;
+pub type CRYPTO_IVEC = crypto_ivec_st;
+pub type CRYPTO_IOVEC = crypto_iovec_st;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ctr_drbg_state_st {
@@ -4807,6 +4864,12 @@ pub type EVP_HPKE_KEM = evp_hpke_kem_st;
 pub type EVP_HPKE_KEY = evp_hpke_key_st;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct evp_kem_st {
+    _unused: [u8; 0],
+}
+pub type EVP_KEM = evp_kem_st;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct evp_pkey_alg_st {
     _unused: [u8; 0],
 }
@@ -4832,6 +4895,18 @@ pub struct ossl_init_settings_st {
     _unused: [u8; 0],
 }
 pub type OPENSSL_INIT_SETTINGS = ossl_init_settings_st;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ossl_lib_ctx_st {
+    _unused: [u8; 0],
+}
+pub type OSSL_LIB_CTX = ossl_lib_ctx_st;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ossl_param_st {
+    _unused: [u8; 0],
+}
+pub type OSSL_PARAM = ossl_param_st;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct pkcs12_st {
@@ -5207,21 +5282,6 @@ extern "C" {
     ) -> usize;
 }
 extern "C" {
-    pub fn ERR_load_BIO_strings();
-}
-extern "C" {
-    pub fn ERR_load_ERR_strings();
-}
-extern "C" {
-    pub fn ERR_load_crypto_strings();
-}
-extern "C" {
-    pub fn ERR_load_RAND_strings();
-}
-extern "C" {
-    pub fn ERR_free_strings();
-}
-extern "C" {
     pub fn ERR_get_error() -> u32;
 }
 extern "C" {
@@ -5358,6 +5418,21 @@ pub const ERR_NUM_LIBS: _bindgen_ty_1 = _bindgen_ty_1(35);
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct _bindgen_ty_1(pub ::std::os::raw::c_uint);
 extern "C" {
+    pub fn ERR_load_BIO_strings();
+}
+extern "C" {
+    pub fn ERR_load_ERR_strings();
+}
+extern "C" {
+    pub fn ERR_load_crypto_strings();
+}
+extern "C" {
+    pub fn ERR_load_RAND_strings();
+}
+extern "C" {
+    pub fn ERR_free_strings();
+}
+extern "C" {
     pub fn ERR_remove_state(pid: ::std::os::raw::c_ulong);
 }
 extern "C" {
@@ -5485,6 +5560,9 @@ extern "C" {
     pub fn OPENSSL_sk_value(sk: *const OPENSSL_STACK, i: usize) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
+    pub fn OPENSSL_sk_last(sk: *const OPENSSL_STACK) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
     pub fn OPENSSL_sk_set(
         sk: *mut OPENSSL_STACK,
         i: usize,
@@ -5547,6 +5625,14 @@ extern "C" {
 }
 extern "C" {
     pub fn OPENSSL_sk_sort(sk: *mut OPENSSL_STACK, call_cmp_func: OPENSSL_sk_call_cmp_func);
+}
+extern "C" {
+    pub fn OPENSSL_sk_sort_and_dedup(
+        sk: *mut OPENSSL_STACK,
+        call_cmp_func: OPENSSL_sk_call_cmp_func,
+        call_free_func: OPENSSL_sk_call_free_func,
+        free_func: OPENSSL_sk_free_func,
+    );
 }
 extern "C" {
     pub fn OPENSSL_sk_is_sorted(sk: *const OPENSSL_STACK) -> ::std::os::raw::c_int;
@@ -5670,6 +5756,9 @@ extern "C" {
     pub fn BIO_up_ref(bio: *mut BIO) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn BIO_dup_ref(bio: *const BIO) -> *mut BIO;
+}
+extern "C" {
     pub fn BIO_read(
         bio: *mut BIO,
         data: *mut ::std::os::raw::c_void,
@@ -5681,6 +5770,14 @@ extern "C" {
         bio: *mut BIO,
         buf: *mut ::std::os::raw::c_char,
         size: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn BIO_write_ex(
+        bio: *mut BIO,
+        data: *const ::std::os::raw::c_void,
+        len: usize,
+        out_written: *mut usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -5815,9 +5912,6 @@ extern "C" {
 }
 extern "C" {
     pub fn BIO_next(bio: *mut BIO) -> *mut BIO;
-}
-extern "C" {
-    pub fn BIO_free_all(bio: *mut BIO);
 }
 extern "C" {
     pub fn BIO_find_type(bio: *mut BIO, type_: ::std::os::raw::c_int) -> *mut BIO;
@@ -6044,6 +6138,19 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn BIO_meth_set_write_ex(
+        method: *mut BIO_METHOD,
+        write_ex_func: ::std::option::Option<
+            unsafe extern "C" fn(
+                arg1: *mut BIO,
+                arg2: *const ::std::os::raw::c_char,
+                arg3: usize,
+                arg4: *mut usize,
+            ) -> ::std::os::raw::c_int,
+        >,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn BIO_meth_set_write(
         method: *mut BIO_METHOD,
         write_func: ::std::option::Option<
@@ -6137,6 +6244,9 @@ extern "C" {
         bio: *const BIO,
         idx: ::std::os::raw::c_int,
     ) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
+    pub fn BIO_free_all(bio: *mut BIO);
 }
 pub type bio_info_cb = BIO_info_cb;
 extern "C" {
@@ -7071,10 +7181,7 @@ extern "C" {
     pub fn ASN1_STRING_get0_data(str_: *const ASN1_STRING) -> *const ::std::os::raw::c_uchar;
 }
 extern "C" {
-    pub fn ASN1_STRING_data(str_: *mut ASN1_STRING) -> *mut ::std::os::raw::c_uchar;
-}
-extern "C" {
-    pub fn ASN1_STRING_length(str_: *const ASN1_STRING) -> ::std::os::raw::c_int;
+    pub fn ASN1_STRING_get_length(str_: *const ASN1_STRING) -> usize;
 }
 extern "C" {
     pub fn ASN1_STRING_cmp(a: *const ASN1_STRING, b: *const ASN1_STRING) -> ::std::os::raw::c_int;
@@ -7422,16 +7529,21 @@ extern "C" {
     pub static ASN1_BIT_STRING_it: ASN1_ITEM;
 }
 extern "C" {
-    pub fn ASN1_BIT_STRING_num_bytes(
-        str_: *const ASN1_BIT_STRING,
-        out: *mut usize,
-    ) -> ::std::os::raw::c_int;
+    pub fn ASN1_BIT_STRING_unused_bits(str_: *const ASN1_BIT_STRING) -> u8;
 }
 extern "C" {
     pub fn ASN1_BIT_STRING_set(
         str_: *mut ASN1_BIT_STRING,
-        d: *const ::std::os::raw::c_uchar,
+        data: *const u8,
         length: ossl_ssize_t,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ASN1_BIT_STRING_set1(
+        str_: *mut ASN1_BIT_STRING,
+        data: *const u8,
+        length: usize,
+        unused_bits: ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -8023,6 +8135,12 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn ASN1_BIT_STRING_num_bytes(
+        str_: *const ASN1_BIT_STRING,
+        out: *mut usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn ASN1_STRING_set_default_mask(mask: ::std::os::raw::c_ulong);
 }
 extern "C" {
@@ -8035,6 +8153,12 @@ extern "C" {
 }
 extern "C" {
     pub fn ASN1_STRING_TABLE_cleanup();
+}
+extern "C" {
+    pub fn ASN1_STRING_data(str_: *mut ASN1_STRING) -> *mut ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn ASN1_STRING_length(str_: *const ASN1_STRING) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn ASN1_INTEGER_set(
@@ -8957,6 +9081,24 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn ED25519_sign_prehashed(
+        out_sig: *mut u8,
+        context: *const u8,
+        context_len: usize,
+        sha512_digest: *const u8,
+        private_key: *const u8,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ED25519_verify_prehashed(
+        context: *const u8,
+        context_len: usize,
+        sha512_digest: *const u8,
+        signature: *const u8,
+        public_key: *const u8,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn ED25519_keypair_from_seed(
         out_public_key: *mut u8,
         out_private_key: *mut u8,
@@ -9000,6 +9142,42 @@ extern "C" {
         max_out_key_len: usize,
         their_msg: *const u8,
         their_msg_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+impl cpace_role_t {
+    pub const cpace_role_initiator: cpace_role_t = cpace_role_t(0);
+    pub const cpace_role_responder: cpace_role_t = cpace_role_t(1);
+}
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub struct cpace_role_t(pub ::std::os::raw::c_uint);
+extern "C" {
+    pub fn CPACE_CTX_new(
+        role: cpace_role_t,
+        password: *const u8,
+        password_len: usize,
+        channel_id: *const u8,
+        channel_id_len: usize,
+        assoc_data: *const u8,
+        assoc_data_len: usize,
+        session_id: *const u8,
+        session_id_len: usize,
+    ) -> *mut CPACE_CTX;
+}
+extern "C" {
+    pub fn CPACE_CTX_free(ctx: *mut CPACE_CTX);
+}
+extern "C" {
+    pub fn CPACE_generate_msg(ctx: *mut CPACE_CTX, out_msg: *mut u8) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CPACE_process_msg(
+        ctx: *mut CPACE_CTX,
+        in_msg: *const u8,
+        peer_assoc_data: *const u8,
+        peer_assoc_data_len: usize,
+        shared_secret: *mut u8,
+        sid_out: *mut u8,
     ) -> ::std::os::raw::c_int;
 }
 #[repr(C)]
@@ -9315,6 +9493,76 @@ extern "C" {
         ad_len: usize,
     ) -> ::std::os::raw::c_int;
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct crypto_ivec_st {
+    pub in_: *const u8,
+    pub len: usize,
+}
+impl Default for crypto_ivec_st {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct crypto_iovec_st {
+    pub out: *mut u8,
+    pub in_: *const u8,
+    pub len: usize,
+}
+impl Default for crypto_iovec_st {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn EVP_AEAD_CTX_sealv(
+        ctx: *const EVP_AEAD_CTX,
+        iovec: *const CRYPTO_IOVEC,
+        num_iovec: usize,
+        out_tag: *mut u8,
+        out_tag_len: *mut usize,
+        max_out_tag_len: usize,
+        nonce: *const u8,
+        nonce_len: usize,
+        aadvec: *const CRYPTO_IVEC,
+        num_aadvec: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_AEAD_CTX_openv(
+        ctx: *const EVP_AEAD_CTX,
+        iovec: *const CRYPTO_IOVEC,
+        num_iovec: usize,
+        out_total_bytes: *mut usize,
+        nonce: *const u8,
+        nonce_len: usize,
+        aadvec: *const CRYPTO_IVEC,
+        num_aadvec: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_AEAD_CTX_openv_detached(
+        ctx: *const EVP_AEAD_CTX,
+        iovec: *const CRYPTO_IOVEC,
+        num_iovec: usize,
+        nonce: *const u8,
+        nonce_len: usize,
+        in_tag: *const u8,
+        in_tag_len: usize,
+        aadvec: *const CRYPTO_IVEC,
+        num_aadvec: usize,
+    ) -> ::std::os::raw::c_int;
+}
 extern "C" {
     pub fn EVP_AEAD_CTX_aead(ctx: *const EVP_AEAD_CTX) -> *const EVP_AEAD;
 }
@@ -9420,6 +9668,21 @@ extern "C" {
     pub fn EVP_md5_sha1() -> *const EVP_MD;
 }
 extern "C" {
+    pub fn EVP_sha3_256() -> *const EVP_MD;
+}
+extern "C" {
+    pub fn EVP_sha3_384() -> *const EVP_MD;
+}
+extern "C" {
+    pub fn EVP_sha3_512() -> *const EVP_MD;
+}
+extern "C" {
+    pub fn EVP_turboshake256() -> *const EVP_MD;
+}
+extern "C" {
+    pub fn EVP_shake256() -> *const EVP_MD;
+}
+extern "C" {
     pub fn EVP_get_digestbynid(nid: ::std::os::raw::c_int) -> *const EVP_MD;
 }
 extern "C" {
@@ -9460,9 +9723,6 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_DigestInit(ctx: *mut EVP_MD_CTX, type_: *const EVP_MD) -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn EVP_DigestUpdate(
         ctx: *mut EVP_MD_CTX,
         data: *const ::std::os::raw::c_void,
@@ -9481,6 +9741,13 @@ extern "C" {
         ctx: *mut EVP_MD_CTX,
         md_out: *mut u8,
         out_size: *mut ::std::os::raw::c_uint,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_DigestSqueeze(
+        ctx: *mut EVP_MD_CTX,
+        out: *mut ::std::os::raw::c_uchar,
+        len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -9521,6 +9788,9 @@ extern "C" {
     pub fn EVP_MD_CTX_type(ctx: *const EVP_MD_CTX) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_MD_CTX_pkey_ctx(ctx: *const EVP_MD_CTX) -> *mut EVP_PKEY_CTX;
+}
+extern "C" {
     pub fn EVP_parse_digest_algorithm(cbs: *mut CBS) -> *const EVP_MD;
 }
 extern "C" {
@@ -9536,13 +9806,16 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_DigestInit(ctx: *mut EVP_MD_CTX, type_: *const EVP_MD) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EVP_MD_CTX_copy(out: *mut EVP_MD_CTX, in_: *const EVP_MD_CTX) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_add_digest(digest: *const EVP_MD) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_get_digestbyname(arg1: *const ::std::os::raw::c_char) -> *const EVP_MD;
+    pub fn EVP_get_digestbyname(name: *const ::std::os::raw::c_char) -> *const EVP_MD;
 }
 extern "C" {
     pub fn EVP_dss1() -> *const EVP_MD;
@@ -9569,6 +9842,30 @@ extern "C" {
 extern "C" {
     pub fn EVP_MD_nid(md: *const EVP_MD) -> ::std::os::raw::c_int;
 }
+extern "C" {
+    pub fn EVP_MD_fetch(
+        libctx: *mut OSSL_LIB_CTX,
+        name: *const ::std::os::raw::c_char,
+        propq: *const ::std::os::raw::c_char,
+    ) -> *mut EVP_MD;
+}
+extern "C" {
+    pub fn EVP_MD_up_ref(md: *mut EVP_MD) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_MD_free(md: *mut EVP_MD);
+}
+extern "C" {
+    pub fn EVP_Q_digest(
+        libctx: *mut OSSL_LIB_CTX,
+        name: *const ::std::os::raw::c_char,
+        propq: *const ::std::os::raw::c_char,
+        in_: *const ::std::os::raw::c_void,
+        in_len: usize,
+        out: *mut u8,
+        out_len: *mut usize,
+    ) -> ::std::os::raw::c_int;
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct evp_md_pctx_ops {
@@ -9585,7 +9882,7 @@ pub struct env_md_ctx_st {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union env_md_ctx_st__bindgen_ty_1 {
-    pub md_data: [u8; 208usize],
+    pub md_data: [u8; 240usize],
     pub alignment: u64,
 }
 impl Default for env_md_ctx_st__bindgen_ty_1 {
@@ -9622,6 +9919,12 @@ extern "C" {
     pub fn EVP_hpke_mlkem1024() -> *const EVP_HPKE_KEM;
 }
 extern "C" {
+    pub fn EVP_kem_dhkem_p256_hkdf_sha256() -> *const EVP_KEM;
+}
+extern "C" {
+    pub fn EVP_kem_dhkem_x25519_hkdf_sha256() -> *const EVP_KEM;
+}
+extern "C" {
     pub fn EVP_HPKE_KEM_id(kem: *const EVP_HPKE_KEM) -> u16;
 }
 extern "C" {
@@ -9634,7 +9937,13 @@ extern "C" {
     pub fn EVP_HPKE_KEM_enc_len(kem: *const EVP_HPKE_KEM) -> usize;
 }
 extern "C" {
+    pub fn EVP_HPKE_KEM_shared_secret_len(kem: *const EVP_HPKE_KEM) -> usize;
+}
+extern "C" {
     pub fn EVP_hpke_hkdf_sha256() -> *const EVP_HPKE_KDF;
+}
+extern "C" {
+    pub fn EVP_hpke_hkdf_sha384() -> *const EVP_HPKE_KDF;
 }
 extern "C" {
     pub fn EVP_HPKE_KDF_id(kdf: *const EVP_HPKE_KDF) -> u16;
@@ -9690,6 +9999,14 @@ extern "C" {
     pub fn EVP_HPKE_KEY_generate(
         key: *mut EVP_HPKE_KEY,
         kem: *const EVP_HPKE_KEM,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_HPKE_KEY_derive(
+        key: *mut EVP_HPKE_KEY,
+        kem: *const EVP_HPKE_KEM,
+        ikm: *const u8,
+        ikm_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -9763,6 +10080,18 @@ extern "C" {
         aead: *const EVP_HPKE_AEAD,
         enc: *const u8,
         enc_len: usize,
+        info: *const u8,
+        info_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_HPKE_CTX_setup_recipient_with_shared_secret(
+        ctx: *mut EVP_HPKE_CTX,
+        kem: *const EVP_HPKE_KEM,
+        kdf: *const EVP_HPKE_KDF,
+        aead: *const EVP_HPKE_AEAD,
+        shared_secret: *const u8,
+        shared_secret_len: usize,
         info: *const u8,
         info_len: usize,
     ) -> ::std::os::raw::c_int;
@@ -9885,6 +10214,7 @@ pub struct evp_hpke_key_st {
     pub kem: *const EVP_HPKE_KEM,
     pub private_key: [u8; 64usize],
     pub public_key: [u8; 1568usize],
+    pub pkey: *mut EVP_PKEY,
 }
 impl Default for evp_hpke_key_st {
     fn default() -> Self {
@@ -10005,52 +10335,71 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_EncryptUpdate(
+    pub fn EVP_EncryptUpdate_ex(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
-        out_len: *mut ::std::os::raw::c_int,
+        out_len: *mut usize,
+        max_out_len: usize,
         in_: *const u8,
-        in_len: ::std::os::raw::c_int,
+        in_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_EncryptFinal_ex(
+    pub fn EVP_EncryptFinal_ex2(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
-        out_len: *mut ::std::os::raw::c_int,
+        out_len: *mut usize,
+        max_out_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_DecryptUpdate(
+    pub fn EVP_DecryptUpdate_ex(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
-        out_len: *mut ::std::os::raw::c_int,
+        out_len: *mut usize,
+        max_out_len: usize,
         in_: *const u8,
-        in_len: ::std::os::raw::c_int,
+        in_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_DecryptFinal_ex(
+    pub fn EVP_DecryptFinal_ex2(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
-        out_len: *mut ::std::os::raw::c_int,
+        out_len: *mut usize,
+        max_out_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_CipherUpdate(
+    pub fn EVP_CipherUpdate_ex(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
-        out_len: *mut ::std::os::raw::c_int,
+        out_len: *mut usize,
+        max_out_len: usize,
         in_: *const u8,
-        in_len: ::std::os::raw::c_int,
+        in_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_CipherFinal_ex(
+    pub fn EVP_CipherUpdateAAD(
+        ctx: *mut EVP_CIPHER_CTX,
+        in_: *const u8,
+        in_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_CipherFinal_ex2(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
-        out_len: *mut ::std::os::raw::c_int,
+        out_len: *mut usize,
+        max_out_len: usize,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_CIPHER_CTX_max_next_update(ctx: *const EVP_CIPHER_CTX, in_len: usize) -> usize;
+}
+extern "C" {
+    pub fn EVP_CIPHER_CTX_max_final(ctx: *const EVP_CIPHER_CTX) -> usize;
 }
 extern "C" {
     pub fn EVP_CIPHER_CTX_cipher(ctx: *const EVP_CIPHER_CTX) -> *const EVP_CIPHER;
@@ -10158,7 +10507,41 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_CipherUpdate(
+        ctx: *mut EVP_CIPHER_CTX,
+        out: *mut u8,
+        out_len: *mut ::std::os::raw::c_int,
+        in_: *const u8,
+        in_len: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_EncryptUpdate(
+        ctx: *mut EVP_CIPHER_CTX,
+        out: *mut u8,
+        out_len: *mut ::std::os::raw::c_int,
+        in_: *const u8,
+        in_len: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_DecryptUpdate(
+        ctx: *mut EVP_CIPHER_CTX,
+        out: *mut u8,
+        out_len: *mut ::std::os::raw::c_int,
+        in_: *const u8,
+        in_len: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EVP_CipherFinal(
+        ctx: *mut EVP_CIPHER_CTX,
+        out: *mut u8,
+        out_len: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_CipherFinal_ex(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
         out_len: *mut ::std::os::raw::c_int,
@@ -10172,7 +10555,21 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_EncryptFinal_ex(
+        ctx: *mut EVP_CIPHER_CTX,
+        out: *mut u8,
+        out_len: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EVP_DecryptFinal(
+        ctx: *mut EVP_CIPHER_CTX,
+        out: *mut u8,
+        out_len: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_DecryptFinal_ex(
         ctx: *mut EVP_CIPHER_CTX,
         out: *mut u8,
         out_len: *mut ::std::os::raw::c_int,
@@ -10271,7 +10668,6 @@ pub struct evp_cipher_ctx_st {
     pub num: ::std::os::raw::c_uint,
     pub final_used: ::std::os::raw::c_int,
     pub final_: [u8; 32usize],
-    pub poisoned: ::std::os::raw::c_int,
 }
 impl Default for evp_cipher_ctx_st {
     fn default() -> Self {
@@ -10397,7 +10793,13 @@ extern "C" {
     pub fn DH_up_ref(dh: *mut DH) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn DH_dup_ref(dh: *const DH) -> *mut DH;
+}
+extern "C" {
     pub fn DH_bits(dh: *const DH) -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn DH_size(dh: *const DH) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn DH_get0_pub_key(dh: *const DH) -> *const BIGNUM;
@@ -10498,12 +10900,6 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn DH_size(dh: *const DH) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn DH_num_bits(dh: *const DH) -> ::std::os::raw::c_uint;
-}
-extern "C" {
     pub fn DH_check(dh: *const DH, out_flags: *mut ::std::os::raw::c_int) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -10564,6 +10960,9 @@ extern "C" {
 }
 extern "C" {
     pub fn DSA_up_ref(dsa: *mut DSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn DSA_dup_ref(dsa: *const DSA) -> *mut DSA;
 }
 extern "C" {
     pub fn DSA_bits(dsa: *const DSA) -> ::std::os::raw::c_uint;
@@ -11080,6 +11479,27 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EC_wpa3_sae_hash_to_curve_p256(
+        group: *const EC_GROUP,
+        out: *mut EC_POINT,
+        salt: *const u8,
+        salt_len: usize,
+        ikm: *const u8,
+        ikm_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EC_wpa3_sae_hunt_and_peck_p256(
+        group: *const EC_GROUP,
+        out: *mut EC_POINT,
+        salt: *const u8,
+        salt_len: usize,
+        password: *const u8,
+        password_len: usize,
+        min_iterations: u8,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EC_GROUP_free(group: *mut EC_GROUP);
 }
 extern "C" {
@@ -11206,6 +11626,9 @@ extern "C" {
 }
 extern "C" {
     pub fn EC_KEY_up_ref(key: *mut EC_KEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EC_KEY_dup_ref(key: *const EC_KEY) -> *mut EC_KEY;
 }
 extern "C" {
     pub fn EC_KEY_is_opaque(key: *const EC_KEY) -> ::std::os::raw::c_int;
@@ -11665,10 +12088,13 @@ extern "C" {
     pub fn EVP_PKEY_up_ref(pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_PKEY_dup_ref(pkey: *const EVP_PKEY) -> *mut EVP_PKEY;
+}
+extern "C" {
     pub fn EVP_PKEY_is_opaque(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_PKEY_cmp(a: *const EVP_PKEY, b: *const EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn EVP_PKEY_eq(a: *const EVP_PKEY, b: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_copy_parameters(
@@ -11680,14 +12106,22 @@ extern "C" {
     pub fn EVP_PKEY_missing_parameters(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_PKEY_cmp_parameters(a: *const EVP_PKEY, b: *const EVP_PKEY)
-        -> ::std::os::raw::c_int;
+    pub fn EVP_PKEY_parameters_eq(a: *const EVP_PKEY, b: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_size(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_bits(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_has_public(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_has_private(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_copy_public(pkey: *const EVP_PKEY) -> *mut EVP_PKEY;
 }
 extern "C" {
     pub fn EVP_PKEY_id(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
@@ -11723,6 +12157,15 @@ extern "C" {
     pub fn EVP_pkey_ml_dsa_87() -> *const EVP_PKEY_ALG;
 }
 extern "C" {
+    pub fn EVP_pkey_ml_kem_768() -> *const EVP_PKEY_ALG;
+}
+extern "C" {
+    pub fn EVP_pkey_ml_kem_1024() -> *const EVP_PKEY_ALG;
+}
+extern "C" {
+    pub fn EVP_pkey_xwing() -> *const EVP_PKEY_ALG;
+}
+extern "C" {
     pub fn EVP_pkey_dsa() -> *const EVP_PKEY_ALG;
 }
 extern "C" {
@@ -11735,7 +12178,7 @@ extern "C" {
     pub fn EVP_pkey_rsa_pss_sha512() -> *const EVP_PKEY_ALG;
 }
 extern "C" {
-    pub fn EVP_PKEY_set1_RSA(pkey: *mut EVP_PKEY, key: *mut RSA) -> ::std::os::raw::c_int;
+    pub fn EVP_PKEY_set1_RSA(pkey: *mut EVP_PKEY, key: *const RSA) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_assign_RSA(pkey: *mut EVP_PKEY, key: *mut RSA) -> ::std::os::raw::c_int;
@@ -11747,7 +12190,7 @@ extern "C" {
     pub fn EVP_PKEY_get1_RSA(pkey: *const EVP_PKEY) -> *mut RSA;
 }
 extern "C" {
-    pub fn EVP_PKEY_set1_DSA(pkey: *mut EVP_PKEY, key: *mut DSA) -> ::std::os::raw::c_int;
+    pub fn EVP_PKEY_set1_DSA(pkey: *mut EVP_PKEY, key: *const DSA) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_assign_DSA(pkey: *mut EVP_PKEY, key: *mut DSA) -> ::std::os::raw::c_int;
@@ -11759,7 +12202,7 @@ extern "C" {
     pub fn EVP_PKEY_get1_DSA(pkey: *const EVP_PKEY) -> *mut DSA;
 }
 extern "C" {
-    pub fn EVP_PKEY_set1_EC_KEY(pkey: *mut EVP_PKEY, key: *mut EC_KEY) -> ::std::os::raw::c_int;
+    pub fn EVP_PKEY_set1_EC_KEY(pkey: *mut EVP_PKEY, key: *const EC_KEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_assign_EC_KEY(pkey: *mut EVP_PKEY, key: *mut EC_KEY) -> ::std::os::raw::c_int;
@@ -11771,7 +12214,7 @@ extern "C" {
     pub fn EVP_PKEY_get1_EC_KEY(pkey: *const EVP_PKEY) -> *mut EC_KEY;
 }
 extern "C" {
-    pub fn EVP_PKEY_set1_DH(pkey: *mut EVP_PKEY, key: *mut DH) -> ::std::os::raw::c_int;
+    pub fn EVP_PKEY_set1_DH(pkey: *mut EVP_PKEY, key: *const DH) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn EVP_PKEY_assign_DH(pkey: *mut EVP_PKEY, key: *mut DH) -> ::std::os::raw::c_int;
@@ -11853,12 +12296,15 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_PKEY_generate_from_alg(alg: *const EVP_PKEY_ALG) -> *mut EVP_PKEY;
+}
+extern "C" {
     pub fn EVP_DigestSignInit(
         ctx: *mut EVP_MD_CTX,
         pctx: *mut *mut EVP_PKEY_CTX,
         type_: *const EVP_MD,
         e: *mut ENGINE,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -11890,7 +12336,7 @@ extern "C" {
         pctx: *mut *mut EVP_PKEY_CTX,
         type_: *const EVP_MD,
         e: *mut ENGINE,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -11938,7 +12384,7 @@ extern "C" {
         ctx: *const EVP_MD_CTX,
         sig: *mut u8,
         out_sig_len: *mut ::std::os::raw::c_uint,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -11963,7 +12409,7 @@ extern "C" {
         ctx: *mut EVP_MD_CTX,
         sig: *const u8,
         sig_len: usize,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12028,7 +12474,7 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn EVP_PKEY_CTX_new(pkey: *mut EVP_PKEY, e: *mut ENGINE) -> *mut EVP_PKEY_CTX;
+    pub fn EVP_PKEY_CTX_new(pkey: *const EVP_PKEY, e: *mut ENGINE) -> *mut EVP_PKEY_CTX;
 }
 extern "C" {
     pub fn EVP_PKEY_CTX_new_id(id: ::std::os::raw::c_int, e: *mut ENGINE) -> *mut EVP_PKEY_CTX;
@@ -12040,7 +12486,7 @@ extern "C" {
     pub fn EVP_PKEY_CTX_dup(ctx: *mut EVP_PKEY_CTX) -> *mut EVP_PKEY_CTX;
 }
 extern "C" {
-    pub fn EVP_PKEY_CTX_get0_pkey(ctx: *mut EVP_PKEY_CTX) -> *mut EVP_PKEY;
+    pub fn EVP_PKEY_CTX_get0_pkey(ctx: *const EVP_PKEY_CTX) -> *mut EVP_PKEY;
 }
 extern "C" {
     pub fn EVP_PKEY_sign_init(ctx: *mut EVP_PKEY_CTX) -> ::std::os::raw::c_int;
@@ -12108,7 +12554,7 @@ extern "C" {
 extern "C" {
     pub fn EVP_PKEY_derive_set_peer(
         ctx: *mut EVP_PKEY_CTX,
-        peer: *mut EVP_PKEY,
+        peer: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12137,6 +12583,36 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_PKEY_encapsulate_init(
+        ctx: *mut EVP_PKEY_CTX,
+        params: *const OSSL_PARAM,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_encapsulate(
+        ctx: *mut EVP_PKEY_CTX,
+        out_ciphertext: *mut u8,
+        out_ciphertext_len: *mut usize,
+        out_secret: *mut u8,
+        out_secret_len: *mut usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_decapsulate_init(
+        ctx: *mut EVP_PKEY_CTX,
+        params: *const OSSL_PARAM,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_decapsulate(
+        ctx: *mut EVP_PKEY_CTX,
+        out_secret: *mut u8,
+        out_secret_len: *mut usize,
+        ciphertext: *const u8,
+        ciphertext_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EVP_PKEY_CTX_set_signature_md(
         ctx: *mut EVP_PKEY_CTX,
         md: *const EVP_MD,
@@ -12146,6 +12622,42 @@ extern "C" {
     pub fn EVP_PKEY_CTX_get_signature_md(
         ctx: *mut EVP_PKEY_CTX,
         out_md: *mut *const EVP_MD,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_CTX_set1_signature_context_string(
+        ctx: *mut EVP_PKEY_CTX,
+        context: *const u8,
+        context_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_RSA_gen(bits: ::std::os::raw::c_uint) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn EVP_PKEY_from_rsa_public_key(
+        alg: *const EVP_PKEY_ALG,
+        in_: *const u8,
+        len: usize,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn EVP_PKEY_from_rsa_private_key(
+        alg: *const EVP_PKEY_ALG,
+        in_: *const u8,
+        len: usize,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn EVP_PKEY_marshal_rsa_public_key(
+        cbb: *mut CBB,
+        key: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_marshal_rsa_private_key(
+        cbb: *mut CBB,
+        key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12222,6 +12734,45 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn EVP_PKEY_from_ec_uncompressed_point(
+        alg: *const EVP_PKEY_ALG,
+        in_: *const u8,
+        len: usize,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn EVP_PKEY_from_ec_compressed_point(
+        alg: *const EVP_PKEY_ALG,
+        in_: *const u8,
+        len: usize,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn EVP_PKEY_marshal_ec_uncompressed_point(
+        cbb: *mut CBB,
+        key: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_marshal_ec_compressed_point(
+        cbb: *mut CBB,
+        key: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_from_ec_private_scalar(
+        alg: *const EVP_PKEY_ALG,
+        in_: *const u8,
+        len: usize,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn EVP_PKEY_marshal_ec_private_scalar(
+        cbb: *mut CBB,
+        key: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EVP_PKEY_get_ec_curve_nid(pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12237,6 +12788,56 @@ extern "C" {
     pub fn EVP_PKEY_CTX_set_dh_pad(
         ctx: *mut EVP_PKEY_CTX,
         pad: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_kem_ml_kem_768() -> *const EVP_KEM;
+}
+extern "C" {
+    pub fn EVP_kem_ml_kem_1024() -> *const EVP_KEM;
+}
+extern "C" {
+    pub fn EVP_kem_xwing() -> *const EVP_KEM;
+}
+extern "C" {
+    pub fn EVP_KEM_ciphertext_len(kem: *const EVP_KEM) -> usize;
+}
+extern "C" {
+    pub fn EVP_KEM_secret_len(kem: *const EVP_KEM) -> usize;
+}
+extern "C" {
+    pub fn EVP_KEM_entropy_len_for_testing(kem: *const EVP_KEM) -> usize;
+}
+extern "C" {
+    pub fn EVP_KEM_encap(
+        kem: *const EVP_KEM,
+        out_ciphertext: *mut u8,
+        ciphertext_len: usize,
+        out_secret: *mut u8,
+        secret_len: usize,
+        peer_key: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_KEM_encap_external_entropy_for_testing(
+        kem: *const EVP_KEM,
+        out_ciphertext: *mut u8,
+        ciphertext_len: usize,
+        out_secret: *mut u8,
+        secret_len: usize,
+        peer_key: *const EVP_PKEY,
+        entropy: *const u8,
+        entropy_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_KEM_decap(
+        kem: *const EVP_KEM,
+        out_secret: *mut u8,
+        secret_len: usize,
+        ciphertext: *const u8,
+        ciphertext_len: usize,
+        key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12258,6 +12859,11 @@ extern "C" {
     pub fn EVP_cleanup();
 }
 extern "C" {
+    pub fn EVP_default_properties_is_fips_enabled(
+        libctx: *mut OSSL_LIB_CTX,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn EVP_CIPHER_do_all_sorted(
         callback: ::std::option::Option<
             unsafe extern "C" fn(
@@ -12274,7 +12880,7 @@ extern "C" {
     pub fn EVP_MD_do_all_sorted(
         callback: ::std::option::Option<
             unsafe extern "C" fn(
-                cipher: *const EVP_MD,
+                md: *const EVP_MD,
                 name: *const ::std::os::raw::c_char,
                 unused: *const ::std::os::raw::c_char,
                 arg: *mut ::std::os::raw::c_void,
@@ -12287,11 +12893,20 @@ extern "C" {
     pub fn EVP_MD_do_all(
         callback: ::std::option::Option<
             unsafe extern "C" fn(
-                cipher: *const EVP_MD,
+                md: *const EVP_MD,
                 name: *const ::std::os::raw::c_char,
                 unused: *const ::std::os::raw::c_char,
                 arg: *mut ::std::os::raw::c_void,
             ),
+        >,
+        arg: *mut ::std::os::raw::c_void,
+    );
+}
+extern "C" {
+    pub fn EVP_MD_do_all_provided(
+        libctx: *mut OSSL_LIB_CTX,
+        callback: ::std::option::Option<
+            unsafe extern "C" fn(md: *mut EVP_MD, arg: *mut ::std::os::raw::c_void),
         >,
         arg: *mut ::std::os::raw::c_void,
     );
@@ -12446,6 +13061,13 @@ extern "C" {
         len: usize,
     ) -> *mut EVP_PKEY;
 }
+extern "C" {
+    pub fn EVP_PKEY_cmp(a: *const EVP_PKEY, b: *const EVP_PKEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn EVP_PKEY_cmp_parameters(a: *const EVP_PKEY, b: *const EVP_PKEY)
+        -> ::std::os::raw::c_int;
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct cbs_st {
@@ -12502,6 +13124,9 @@ extern "C" {
     pub fn CBS_get_u32le(cbs: *mut CBS, out: *mut u32) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn CBS_get_u48(cbs: *mut CBS, out: *mut u64) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn CBS_get_u64(cbs: *mut CBS, out: *mut u64) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12529,6 +13154,20 @@ extern "C" {
     pub fn CBS_get_until_first(cbs: *mut CBS, out: *mut CBS, c: u8) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn CBS_get_until_first_of(
+        cbs: *mut CBS,
+        out: *mut CBS,
+        chars: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CBS_get_until_first_not_of(
+        cbs: *mut CBS,
+        out: *mut CBS,
+        chars: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn CBS_get_u64_decimal(cbs: *mut CBS, out: *mut u64) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -12544,6 +13183,9 @@ extern "C" {
         out: *mut CBS,
         tag_value: CBS_ASN1_TAG,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CBS_peek_any_asn1_tag(cbs: *const CBS) -> CBS_ASN1_TAG;
 }
 extern "C" {
     pub fn CBS_peek_asn1_tag(cbs: *const CBS, tag_value: CBS_ASN1_TAG) -> ::std::os::raw::c_int;
@@ -12654,6 +13296,15 @@ extern "C" {
 }
 extern "C" {
     pub fn CBS_asn1_oid_to_text(cbs: *const CBS) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn CBS_is_valid_asn1_relative_oid(cbs: *const CBS) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CBS_asn1_relative_oid_to_text(cbs: *const CBS) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn CBS_get_asn1_oid_component(cbs: *mut CBS, out: *mut u64) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn CBS_parse_generalized_time(
@@ -12891,7 +13542,7 @@ extern "C" {
     pub fn CBB_flush(cbb: *mut CBB) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn CBB_data(cbb: *const CBB) -> *const u8;
+    pub fn CBB_data(cbb: *const CBB) -> *mut u8;
 }
 extern "C" {
     pub fn CBB_len(cbb: *const CBB) -> usize;
@@ -12959,6 +13610,9 @@ extern "C" {
     pub fn CBB_add_u32le(cbb: *mut CBB, value: u32) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn CBB_add_u48(cbb: *mut CBB, value: u64) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn CBB_add_u64(cbb: *mut CBB, value: u64) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -13014,6 +13668,23 @@ extern "C" {
         text: *const ::std::os::raw::c_char,
         len: usize,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CBB_add_asn1_relative_oid_from_text(
+        cbb: *mut CBB,
+        text: *const ::std::os::raw::c_char,
+        len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CBB_add_asn1_relative_oid_from_der_to_text(
+        cbb: *mut CBB,
+        data: *const u8,
+        data_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CBB_add_asn1_oid_component(cbb: *mut CBB, value: u64) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn CBB_flush_asn1_set_of(cbb: *mut CBB) -> ::std::os::raw::c_int;
@@ -13330,9 +14001,9 @@ extern "C" {
 }
 extern "C" {
     pub fn PKCS7_sign(
-        sign_cert: *mut X509,
-        pkey: *mut EVP_PKEY,
-        certs: *mut stack_st_X509,
+        sign_cert: *const X509,
+        pkey: *const EVP_PKEY,
+        certs: *const stack_st_X509,
         data: *mut BIO,
         flags: ::std::os::raw::c_int,
     ) -> *mut PKCS7;
@@ -13358,6 +14029,12 @@ extern "C" {
 }
 extern "C" {
     pub fn CRYPTO_BUFFER_POOL_free(pool: *mut CRYPTO_BUFFER_POOL);
+}
+extern "C" {
+    pub fn CRYPTO_BUFFER_POOL_up_ref(pool: *mut CRYPTO_BUFFER_POOL) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CRYPTO_BUFFER_POOL_dup_ref(pool: *const CRYPTO_BUFFER_POOL) -> *mut CRYPTO_BUFFER_POOL;
 }
 extern "C" {
     pub fn CRYPTO_BUFFER_new(
@@ -13387,6 +14064,9 @@ extern "C" {
 }
 extern "C" {
     pub fn CRYPTO_BUFFER_up_ref(buf: *mut CRYPTO_BUFFER) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CRYPTO_BUFFER_dup_ref(buf: *const CRYPTO_BUFFER) -> *mut CRYPTO_BUFFER;
 }
 extern "C" {
     pub fn CRYPTO_BUFFER_data(buf: *const CRYPTO_BUFFER) -> *const u8;
@@ -13423,6 +14103,9 @@ extern "C" {
 }
 extern "C" {
     pub fn RSA_up_ref(rsa: *mut RSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn RSA_dup_ref(rsa: *const RSA) -> *mut RSA;
 }
 extern "C" {
     pub fn RSA_bits(rsa: *const RSA) -> ::std::os::raw::c_uint;
@@ -13930,7 +14613,10 @@ extern "C" {
     pub fn X509_up_ref(x509: *mut X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_chain_up_ref(chain: *mut stack_st_X509) -> *mut stack_st_X509;
+    pub fn X509_dup_ref(x509: *const X509) -> *mut X509;
+}
+extern "C" {
+    pub fn X509_chain_up_ref(chain: *const stack_st_X509) -> *mut stack_st_X509;
 }
 extern "C" {
     pub fn X509_dup(x509: *const X509) -> *mut X509;
@@ -13947,13 +14633,13 @@ extern "C" {
 }
 extern "C" {
     pub fn X509_parse_with_algorithms(
-        buf: *mut CRYPTO_BUFFER,
+        buf: *const CRYPTO_BUFFER,
         algs: *const *const EVP_PKEY_ALG,
         num_algs: usize,
     ) -> *mut X509;
 }
 extern "C" {
-    pub fn X509_parse_from_buffer(buf: *mut CRYPTO_BUFFER) -> *mut X509;
+    pub fn X509_parse_from_buffer(buf: *const CRYPTO_BUFFER) -> *mut X509;
 }
 extern "C" {
     pub fn i2d_X509(x509: *const X509, outp: *mut *mut u8) -> ::std::os::raw::c_int;
@@ -14002,22 +14688,22 @@ extern "C" {
     );
 }
 extern "C" {
-    pub fn X509_get_extension_flags(x509: *mut X509) -> u32;
+    pub fn X509_get_extension_flags(x509: *const X509) -> u32;
 }
 extern "C" {
-    pub fn X509_get_pathlen(x509: *mut X509) -> ::std::os::raw::c_long;
+    pub fn X509_get_pathlen(x509: *const X509) -> ::std::os::raw::c_long;
 }
 extern "C" {
-    pub fn X509_get_key_usage(x509: *mut X509) -> u32;
+    pub fn X509_get_key_usage(x509: *const X509) -> u32;
 }
 extern "C" {
-    pub fn X509_get_extended_key_usage(x509: *mut X509) -> u32;
+    pub fn X509_get_extended_key_usage(x509: *const X509) -> u32;
 }
 extern "C" {
-    pub fn X509_get0_subject_key_id(x509: *mut X509) -> *const ASN1_OCTET_STRING;
+    pub fn X509_get0_subject_key_id(x509: *const X509) -> *const ASN1_OCTET_STRING;
 }
 extern "C" {
-    pub fn X509_get0_authority_key_id(x509: *mut X509) -> *const ASN1_OCTET_STRING;
+    pub fn X509_get0_authority_key_id(x509: *const X509) -> *const ASN1_OCTET_STRING;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -14042,10 +14728,10 @@ pub type sk_GENERAL_NAME_delete_if_func = ::std::option::Option<
 >;
 pub type GENERAL_NAMES = stack_st_GENERAL_NAME;
 extern "C" {
-    pub fn X509_get0_authority_issuer(x509: *mut X509) -> *const GENERAL_NAMES;
+    pub fn X509_get0_authority_issuer(x509: *const X509) -> *const GENERAL_NAMES;
 }
 extern "C" {
-    pub fn X509_get0_authority_serial(x509: *mut X509) -> *const ASN1_INTEGER;
+    pub fn X509_get0_authority_serial(x509: *const X509) -> *const ASN1_INTEGER;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -14107,7 +14793,7 @@ extern "C" {
     pub fn i2d_X509_tbs(x509: *const X509, outp: *mut *mut u8) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_verify(x509: *mut X509, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn X509_verify(x509: *const X509, pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_get1_email(x509: *const X509) -> *mut stack_st_OPENSSL_STRING;
@@ -14155,7 +14841,7 @@ extern "C" {
     pub fn X509_set_subject_name(x509: *mut X509, name: *const X509_NAME) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_set_pubkey(x509: *mut X509, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn X509_set_pubkey(x509: *mut X509, pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_delete_ext(x: *mut X509, loc: ::std::os::raw::c_int) -> *mut X509_EXTENSION;
@@ -14179,7 +14865,7 @@ extern "C" {
 extern "C" {
     pub fn X509_sign(
         x509: *mut X509,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
         md: *const EVP_MD,
     ) -> ::std::os::raw::c_int;
 }
@@ -14290,6 +14976,9 @@ extern "C" {
     pub fn X509_CRL_up_ref(crl: *mut X509_CRL) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn X509_CRL_dup_ref(crl: *const X509_CRL) -> *mut X509_CRL;
+}
+extern "C" {
     pub fn X509_CRL_dup(crl: *const X509_CRL) -> *mut X509_CRL;
 }
 extern "C" {
@@ -14331,7 +15020,7 @@ extern "C" {
     pub fn X509_CRL_get0_by_cert(
         crl: *mut X509_CRL,
         out: *mut *mut X509_REVOKED,
-        x509: *mut X509,
+        x509: *const X509,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -14387,12 +15076,12 @@ extern "C" {
 }
 extern "C" {
     pub fn i2d_X509_CRL_tbs(
-        crl: *mut X509_CRL,
+        crl: *const X509_CRL,
         outp: *mut *mut ::std::os::raw::c_uchar,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_CRL_verify(crl: *mut X509_CRL, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn X509_CRL_verify(crl: *const X509_CRL, pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_CRL_new() -> *mut X509_CRL;
@@ -14453,7 +15142,7 @@ extern "C" {
 extern "C" {
     pub fn X509_CRL_sign(
         crl: *mut X509_CRL,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
         md: *const EVP_MD,
     ) -> ::std::os::raw::c_int;
 }
@@ -14653,7 +15342,7 @@ extern "C" {
     pub fn X509_REQ_get_signature_nid(req: *const X509_REQ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_REQ_verify(req: *mut X509_REQ, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn X509_REQ_verify(req: *const X509_REQ, pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_REQ_get1_email(req: *const X509_REQ) -> *mut stack_st_OPENSSL_STRING;
@@ -14670,11 +15359,11 @@ extern "C" {
 extern "C" {
     pub fn X509_REQ_set_subject_name(
         req: *mut X509_REQ,
-        name: *mut X509_NAME,
+        name: *const X509_NAME,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_REQ_set_pubkey(req: *mut X509_REQ, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn X509_REQ_set_pubkey(req: *mut X509_REQ, pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_REQ_delete_attr(
@@ -14731,7 +15420,7 @@ extern "C" {
 extern "C" {
     pub fn X509_REQ_sign(
         req: *mut X509_REQ,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
         md: *const EVP_MD,
     ) -> ::std::os::raw::c_int;
 }
@@ -14977,7 +15666,10 @@ extern "C" {
     pub fn i2d_X509_PUBKEY(key: *const X509_PUBKEY, outp: *mut *mut u8) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_PUBKEY_set(x: *mut *mut X509_PUBKEY, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn X509_PUBKEY_set(
+        x: *mut *mut X509_PUBKEY,
+        pkey: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_PUBKEY_get0(key: *const X509_PUBKEY) -> *mut EVP_PKEY;
@@ -15571,7 +16263,6 @@ extern "C" {
 pub struct DIST_POINT_NAME_st {
     pub type_: ::std::os::raw::c_int,
     pub name: DIST_POINT_NAME_st__bindgen_ty_1,
-    pub dpname: *mut X509_NAME,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -16138,13 +16829,19 @@ extern "C" {
     pub fn X509_STORE_up_ref(store: *mut X509_STORE) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn X509_STORE_dup_ref(store: *const X509_STORE) -> *mut X509_STORE;
+}
+extern "C" {
     pub fn X509_STORE_free(store: *mut X509_STORE);
 }
 extern "C" {
-    pub fn X509_STORE_add_cert(store: *mut X509_STORE, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn X509_STORE_add_cert(store: *mut X509_STORE, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn X509_STORE_add_crl(store: *mut X509_STORE, crl: *mut X509_CRL) -> ::std::os::raw::c_int;
+    pub fn X509_STORE_add_crl(
+        store: *mut X509_STORE,
+        crl: *const X509_CRL,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_STORE_get0_param(store: *mut X509_STORE) -> *mut X509_VERIFY_PARAM;
@@ -16254,9 +16951,6 @@ extern "C" {
 }
 extern "C" {
     pub fn X509_STORE_CTX_get_current_cert(ctx: *const X509_STORE_CTX) -> *mut X509;
-}
-extern "C" {
-    pub fn X509_STORE_CTX_get0_current_crl(ctx: *const X509_STORE_CTX) -> *mut X509_CRL;
 }
 extern "C" {
     pub fn X509_STORE_CTX_get0_store(ctx: *const X509_STORE_CTX) -> *mut X509_STORE;
@@ -16553,8 +17247,8 @@ extern "C" {
 }
 extern "C" {
     pub fn NETSCAPE_SPKI_verify(
-        spki: *mut NETSCAPE_SPKI,
-        pkey: *mut EVP_PKEY,
+        spki: *const NETSCAPE_SPKI,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -16564,7 +17258,7 @@ extern "C" {
     ) -> *mut NETSCAPE_SPKI;
 }
 extern "C" {
-    pub fn NETSCAPE_SPKI_b64_encode(spki: *mut NETSCAPE_SPKI) -> *mut ::std::os::raw::c_char;
+    pub fn NETSCAPE_SPKI_b64_encode(spki: *const NETSCAPE_SPKI) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
     pub fn NETSCAPE_SPKI_get_pubkey(spki: *const NETSCAPE_SPKI) -> *mut EVP_PKEY;
@@ -16572,13 +17266,13 @@ extern "C" {
 extern "C" {
     pub fn NETSCAPE_SPKI_set_pubkey(
         spki: *mut NETSCAPE_SPKI,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn NETSCAPE_SPKI_sign(
         spki: *mut NETSCAPE_SPKI,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
         md: *const EVP_MD,
     ) -> ::std::os::raw::c_int;
 }
@@ -17076,6 +17770,9 @@ extern "C" {
     pub fn X509_cmp_time_posix(s: *const ASN1_TIME, t: i64) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn X509_cmp_time_posix_nonstandard(s: *const ASN1_TIME, t: i64) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn X509_cmp_current_time(s: *const ASN1_TIME) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -17186,7 +17883,7 @@ extern "C" {
         algor1: *const X509_ALGOR,
         signature: *const ASN1_BIT_STRING,
         data: *mut ::std::os::raw::c_void,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -17196,7 +17893,7 @@ extern "C" {
         algor2: *mut X509_ALGOR,
         signature: *mut ASN1_BIT_STRING,
         data: *mut ::std::os::raw::c_void,
-        pkey: *mut EVP_PKEY,
+        pkey: *const EVP_PKEY,
         type_: *const EVP_MD,
     ) -> ::std::os::raw::c_int;
 }
@@ -17266,14 +17963,14 @@ extern "C" {
 }
 extern "C" {
     pub fn X509_check_purpose(
-        x509: *mut X509,
+        x509: *const X509,
         purpose: ::std::os::raw::c_int,
         ca: ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn X509_check_trust(
-        x509: *mut X509,
+        x509: *const X509,
         id: ::std::os::raw::c_int,
         flags: ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int;
@@ -17802,7 +18499,7 @@ extern "C" {
         password: *const ::std::os::raw::c_char,
         name: *const ::std::os::raw::c_char,
         pkey: *const EVP_PKEY,
-        cert: *mut X509,
+        cert: *const X509,
         chain: *const stack_st_X509,
         key_nid: ::std::os::raw::c_int,
         cert_nid: ::std::os::raw::c_int,
@@ -18025,6 +18722,20 @@ extern "C" {
 }
 extern "C" {
     pub fn MD5(data: *const u8, len: usize, out: *mut u8) -> *mut u8;
+}
+extern "C" {
+    pub fn MD5_marshal_state(
+        md5: *const MD5_CTX,
+        out: *mut u8,
+        out_len: *mut usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn MD5_parse_state(
+        md5: *mut MD5_CTX,
+        in_: *const u8,
+        in_len: usize,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn MD5_Transform(md5: *mut MD5_CTX, block: *const u8);
@@ -18397,87 +19108,578 @@ extern "C" {
 }
 pub type pem_password_cb = ::std::option::Option<
     unsafe extern "C" fn(
-        buf: *mut ::std::os::raw::c_char,
-        size: ::std::os::raw::c_int,
-        rwflag: ::std::os::raw::c_int,
+        out: *mut ::std::os::raw::c_char,
+        max_out: ::std::os::raw::c_int,
+        enc: ::std::os::raw::c_int,
         userdata: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int,
 >;
 extern "C" {
-    pub fn PEM_read_bio(
-        bp: *mut BIO,
-        name: *mut *mut ::std::os::raw::c_char,
-        header: *mut *mut ::std::os::raw::c_char,
-        data: *mut *mut ::std::os::raw::c_uchar,
-        len: *mut ::std::os::raw::c_long,
+    pub fn PEM_def_callback(
+        buf: *mut ::std::os::raw::c_char,
+        size: ::std::os::raw::c_int,
+        enc: ::std::os::raw::c_int,
+        userdata: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn PEM_write_bio(
-        bp: *mut BIO,
-        name: *const ::std::os::raw::c_char,
-        hdr: *const ::std::os::raw::c_char,
-        data: *const ::std::os::raw::c_uchar,
-        len: ::std::os::raw::c_long,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_bytes_read_bio(
-        pdata: *mut *mut ::std::os::raw::c_uchar,
-        plen: *mut ::std::os::raw::c_long,
-        pnm: *mut *mut ::std::os::raw::c_char,
-        name: *const ::std::os::raw::c_char,
-        bp: *mut BIO,
+    pub fn PEM_read_bio_X509(
+        bio: *mut BIO,
+        out: *mut *mut X509,
         cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509;
 }
 extern "C" {
-    pub fn PEM_ASN1_read_bio(
-        d2i: d2i_of_void,
-        name: *const ::std::os::raw::c_char,
-        bp: *mut BIO,
-        x: *mut *mut ::std::os::raw::c_void,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut ::std::os::raw::c_void;
+    pub fn PEM_write_bio_X509(bio: *mut BIO, in_: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn PEM_ASN1_write_bio(
-        i2d: i2d_of_void,
-        name: *const ::std::os::raw::c_char,
-        bp: *mut BIO,
-        x: *mut ::std::os::raw::c_void,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
+    pub fn PEM_read_bio_X509_AUX(
+        bio: *mut BIO,
+        out: *mut *mut X509,
         cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509;
+}
+extern "C" {
+    pub fn PEM_write_bio_X509_AUX(bio: *mut BIO, in_: *const X509) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_X509_CRL(
+        bio: *mut BIO,
+        out: *mut *mut X509_CRL,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509_CRL;
+}
+extern "C" {
+    pub fn PEM_write_bio_X509_CRL(bio: *mut BIO, in_: *const X509_CRL) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_X509_REQ(
+        bio: *mut BIO,
+        out: *mut *mut X509_REQ,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509_REQ;
+}
+extern "C" {
+    pub fn PEM_write_bio_X509_REQ(bio: *mut BIO, in_: *const X509_REQ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_bio_X509_REQ_NEW(bio: *mut BIO, in_: *const X509_REQ)
+        -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_PKCS7(
+        bio: *mut BIO,
+        out: *mut *mut PKCS7,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut PKCS7;
+}
+extern "C" {
+    pub fn PEM_write_bio_PKCS7(bio: *mut BIO, in_: *const PKCS7) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn PEM_X509_INFO_read_bio(
-        bp: *mut BIO,
+        bio: *mut BIO,
         sk: *mut stack_st_X509_INFO,
         cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
+        userdata: *mut ::std::os::raw::c_void,
     ) -> *mut stack_st_X509_INFO;
+}
+extern "C" {
+    pub fn PEM_read_bio_PrivateKey(
+        bio: *mut BIO,
+        out: *mut *mut EVP_PKEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn PEM_write_bio_PrivateKey(
+        bio: *mut BIO,
+        in_: *const EVP_PKEY,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_PUBKEY(
+        bio: *mut BIO,
+        out: *mut *mut EVP_PKEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn PEM_write_bio_PUBKEY(bio: *mut BIO, in_: *const EVP_PKEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_bio_PKCS8PrivateKey_nid(
+        bio: *mut BIO,
+        in_: *const EVP_PKEY,
+        nid: ::std::os::raw::c_int,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_bio_PKCS8PrivateKey(
+        bio: *mut BIO,
+        in_: *const EVP_PKEY,
+        enc: *const EVP_CIPHER,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PKCS8PrivateKey_nid(
+        fp: *mut FILE,
+        in_: *const EVP_PKEY,
+        nid: ::std::os::raw::c_int,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PKCS8PrivateKey(
+        fp: *mut FILE,
+        in_: *const EVP_PKEY,
+        enc: *const EVP_CIPHER,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_PKCS8(
+        bio: *mut BIO,
+        out: *mut *mut X509_SIG,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509_SIG;
+}
+extern "C" {
+    pub fn PEM_write_bio_PKCS8(bio: *mut BIO, in_: *const X509_SIG) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_PKCS8_PRIV_KEY_INFO(
+        bio: *mut BIO,
+        out: *mut *mut PKCS8_PRIV_KEY_INFO,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut PKCS8_PRIV_KEY_INFO;
+}
+extern "C" {
+    pub fn PEM_write_bio_PKCS8_PRIV_KEY_INFO(
+        bio: *mut BIO,
+        in_: *const PKCS8_PRIV_KEY_INFO,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_RSAPrivateKey(
+        bio: *mut BIO,
+        out: *mut *mut RSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut RSA;
+}
+extern "C" {
+    pub fn PEM_write_bio_RSAPrivateKey(
+        bio: *mut BIO,
+        in_: *const RSA,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_RSAPublicKey(
+        bio: *mut BIO,
+        out: *mut *mut RSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut RSA;
+}
+extern "C" {
+    pub fn PEM_write_bio_RSAPublicKey(bio: *mut BIO, in_: *const RSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_RSA_PUBKEY(
+        bio: *mut BIO,
+        out: *mut *mut RSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut RSA;
+}
+extern "C" {
+    pub fn PEM_write_bio_RSA_PUBKEY(bio: *mut BIO, in_: *const RSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_DSAPrivateKey(
+        bio: *mut BIO,
+        out: *mut *mut DSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DSA;
+}
+extern "C" {
+    pub fn PEM_write_bio_DSAPrivateKey(
+        bio: *mut BIO,
+        in_: *const DSA,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_DSA_PUBKEY(
+        bio: *mut BIO,
+        out: *mut *mut DSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DSA;
+}
+extern "C" {
+    pub fn PEM_write_bio_DSA_PUBKEY(bio: *mut BIO, in_: *const DSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_DSAparams(
+        bio: *mut BIO,
+        out: *mut *mut DSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DSA;
+}
+extern "C" {
+    pub fn PEM_write_bio_DSAparams(bio: *mut BIO, in_: *const DSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_ECPrivateKey(
+        bio: *mut BIO,
+        out: *mut *mut EC_KEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EC_KEY;
+}
+extern "C" {
+    pub fn PEM_write_bio_ECPrivateKey(
+        bio: *mut BIO,
+        in_: *const EC_KEY,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_EC_PUBKEY(
+        bio: *mut BIO,
+        out: *mut *mut EC_KEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EC_KEY;
+}
+extern "C" {
+    pub fn PEM_write_bio_EC_PUBKEY(bio: *mut BIO, in_: *const EC_KEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio_DHparams(
+        bio: *mut BIO,
+        out: *mut *mut DH,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DH;
+}
+extern "C" {
+    pub fn PEM_write_bio_DHparams(bio: *mut BIO, in_: *const DH) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_X509(
+        fp: *mut FILE,
+        out: *mut *mut X509,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509;
+}
+extern "C" {
+    pub fn PEM_read_X509_CRL(
+        fp: *mut FILE,
+        out: *mut *mut X509_CRL,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509_CRL;
+}
+extern "C" {
+    pub fn PEM_read_X509_AUX(
+        fp: *mut FILE,
+        out: *mut *mut X509,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509;
 }
 extern "C" {
     pub fn PEM_X509_INFO_read(
         fp: *mut FILE,
         sk: *mut stack_st_X509_INFO,
         cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
+        userdata: *mut ::std::os::raw::c_void,
     ) -> *mut stack_st_X509_INFO;
+}
+extern "C" {
+    pub fn PEM_read_X509_REQ(
+        fp: *mut FILE,
+        out: *mut *mut X509_REQ,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509_REQ;
+}
+extern "C" {
+    pub fn PEM_read_PKCS7(
+        fp: *mut FILE,
+        out: *mut *mut PKCS7,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut PKCS7;
+}
+extern "C" {
+    pub fn PEM_read_PKCS8(
+        fp: *mut FILE,
+        out: *mut *mut X509_SIG,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut X509_SIG;
+}
+extern "C" {
+    pub fn PEM_read_PKCS8_PRIV_KEY_INFO(
+        fp: *mut FILE,
+        out: *mut *mut PKCS8_PRIV_KEY_INFO,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut PKCS8_PRIV_KEY_INFO;
+}
+extern "C" {
+    pub fn PEM_read_RSAPrivateKey(
+        fp: *mut FILE,
+        out: *mut *mut RSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut RSA;
+}
+extern "C" {
+    pub fn PEM_read_RSAPublicKey(
+        fp: *mut FILE,
+        out: *mut *mut RSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut RSA;
+}
+extern "C" {
+    pub fn PEM_read_RSA_PUBKEY(
+        fp: *mut FILE,
+        out: *mut *mut RSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut RSA;
+}
+extern "C" {
+    pub fn PEM_read_DSAPrivateKey(
+        fp: *mut FILE,
+        out: *mut *mut DSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DSA;
+}
+extern "C" {
+    pub fn PEM_read_DSA_PUBKEY(
+        fp: *mut FILE,
+        out: *mut *mut DSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DSA;
+}
+extern "C" {
+    pub fn PEM_read_DSAparams(
+        fp: *mut FILE,
+        out: *mut *mut DSA,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DSA;
+}
+extern "C" {
+    pub fn PEM_read_ECPrivateKey(
+        fp: *mut FILE,
+        out: *mut *mut EC_KEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EC_KEY;
+}
+extern "C" {
+    pub fn PEM_read_EC_PUBKEY(
+        fp: *mut FILE,
+        out: *mut *mut EC_KEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EC_KEY;
+}
+extern "C" {
+    pub fn PEM_read_DHparams(
+        fp: *mut FILE,
+        out: *mut *mut DH,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut DH;
+}
+extern "C" {
+    pub fn PEM_read_PrivateKey(
+        fp: *mut FILE,
+        out: *mut *mut EVP_PKEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn PEM_read_PUBKEY(
+        fp: *mut FILE,
+        out: *mut *mut EVP_PKEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn PEM_write_X509(fp: *mut FILE, x: *const X509) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_X509_CRL(fp: *mut FILE, in_: *const X509_CRL) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_X509_AUX(fp: *mut FILE, in_: *const X509) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_X509_REQ(fp: *mut FILE, in_: *const X509_REQ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_X509_REQ_NEW(fp: *mut FILE, in_: *const X509_REQ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PKCS7(fp: *mut FILE, in_: *const PKCS7) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PKCS8(fp: *mut FILE, in_: *const X509_SIG) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PKCS8_PRIV_KEY_INFO(
+        fp: *mut FILE,
+        in_: *const PKCS8_PRIV_KEY_INFO,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_RSAPrivateKey(
+        fp: *mut FILE,
+        in_: *const RSA,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_RSAPublicKey(fp: *mut FILE, in_: *const RSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_RSA_PUBKEY(fp: *mut FILE, in_: *const RSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_DSAPrivateKey(
+        fp: *mut FILE,
+        in_: *const DSA,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_DSA_PUBKEY(fp: *mut FILE, in_: *const DSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_DSAparams(fp: *mut FILE, in_: *const DSA) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_ECPrivateKey(
+        fp: *mut FILE,
+        in_: *const EC_KEY,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_EC_PUBKEY(fp: *mut FILE, in_: *const EC_KEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_DHparams(fp: *mut FILE, in_: *const DH) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PrivateKey(
+        fp: *mut FILE,
+        in_: *const EVP_PKEY,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_PUBKEY(fp: *mut FILE, in_: *const EVP_PKEY) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_read_bio(
+        bio: *mut BIO,
+        out_name: *mut *mut ::std::os::raw::c_char,
+        out_header: *mut *mut ::std::os::raw::c_char,
+        out_data: *mut *mut u8,
+        out_len: *mut ::std::os::raw::c_long,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn PEM_read(
         fp: *mut FILE,
-        name: *mut *mut ::std::os::raw::c_char,
-        header: *mut *mut ::std::os::raw::c_char,
-        data: *mut *mut ::std::os::raw::c_uchar,
-        len: *mut ::std::os::raw::c_long,
+        out_name: *mut *mut ::std::os::raw::c_char,
+        out_header: *mut *mut ::std::os::raw::c_char,
+        out_data: *mut *mut u8,
+        out_len: *mut ::std::os::raw::c_long,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_bio(
+        bio: *mut BIO,
+        name: *const ::std::os::raw::c_char,
+        hdr: *const ::std::os::raw::c_char,
+        data: *const u8,
+        len: ::std::os::raw::c_long,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -18485,615 +19687,125 @@ extern "C" {
         fp: *mut FILE,
         name: *const ::std::os::raw::c_char,
         hdr: *const ::std::os::raw::c_char,
-        data: *const ::std::os::raw::c_uchar,
+        data: *const u8,
         len: ::std::os::raw::c_long,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_bytes_read_bio(
+        out_data: *mut *mut u8,
+        out_len: *mut ::std::os::raw::c_long,
+        out_name: *mut *mut ::std::os::raw::c_char,
+        expected_name: *const ::std::os::raw::c_char,
+        bio: *mut BIO,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn d2i_PKCS8PrivateKey_bio(
+        bio: *mut BIO,
+        out: *mut *mut EVP_PKEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn i2d_PKCS8PrivateKey_bio(
+        bio: *mut BIO,
+        in_: *const EVP_PKEY,
+        enc: *const EVP_CIPHER,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn i2d_PKCS8PrivateKey_nid_bio(
+        bio: *mut BIO,
+        in_: *const EVP_PKEY,
+        nid: ::std::os::raw::c_int,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn i2d_PKCS8PrivateKey_fp(
+        fp: *mut FILE,
+        in_: *const EVP_PKEY,
+        enc: *const EVP_CIPHER,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn i2d_PKCS8PrivateKey_nid_fp(
+        fp: *mut FILE,
+        in_: *const EVP_PKEY,
+        nid: ::std::os::raw::c_int,
+        pass: *const ::std::os::raw::c_char,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn d2i_PKCS8PrivateKey_fp(
+        fp: *mut FILE,
+        out: *mut *mut EVP_PKEY,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut EVP_PKEY;
+}
+extern "C" {
+    pub fn PEM_ASN1_read_bio(
+        d2i: d2i_of_void,
+        name: *const ::std::os::raw::c_char,
+        bio: *mut BIO,
+        out: *mut *mut ::std::os::raw::c_void,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
     pub fn PEM_ASN1_read(
         d2i: d2i_of_void,
         name: *const ::std::os::raw::c_char,
         fp: *mut FILE,
-        x: *mut *mut ::std::os::raw::c_void,
+        out: *mut *mut ::std::os::raw::c_void,
         cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
+        userdata: *mut ::std::os::raw::c_void,
     ) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
+    pub fn PEM_ASN1_write_bio(
+        i2d: i2d_of_void,
+        name: *const ::std::os::raw::c_char,
+        bio: *mut BIO,
+        in_: *const ::std::os::raw::c_void,
+        enc: *const EVP_CIPHER,
+        pass: *const u8,
+        pass_len: ::std::os::raw::c_int,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn PEM_ASN1_write(
         i2d: i2d_of_void,
         name: *const ::std::os::raw::c_char,
         fp: *mut FILE,
-        x: *mut ::std::os::raw::c_void,
+        in_: *const ::std::os::raw::c_void,
         enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
+        pass: *const u8,
         pass_len: ::std::os::raw::c_int,
         callback: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_def_callback(
-        buf: *mut ::std::os::raw::c_char,
-        size: ::std::os::raw::c_int,
-        rwflag: ::std::os::raw::c_int,
         userdata: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_X509(
-        bp: *mut BIO,
-        x: *mut *mut X509,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509;
-}
-extern "C" {
-    pub fn PEM_read_X509(
-        fp: *mut FILE,
-        x: *mut *mut X509,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509;
-}
-extern "C" {
-    pub fn PEM_write_bio_X509(bp: *mut BIO, x: *mut X509) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_X509(fp: *mut FILE, x: *mut X509) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_X509_AUX(
-        bp: *mut BIO,
-        x: *mut *mut X509,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509;
-}
-extern "C" {
-    pub fn PEM_read_X509_AUX(
-        fp: *mut FILE,
-        x: *mut *mut X509,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509;
-}
-extern "C" {
-    pub fn PEM_write_bio_X509_AUX(bp: *mut BIO, x: *mut X509) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_X509_AUX(fp: *mut FILE, x: *mut X509) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_X509_REQ(
-        bp: *mut BIO,
-        x: *mut *mut X509_REQ,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509_REQ;
-}
-extern "C" {
-    pub fn PEM_read_X509_REQ(
-        fp: *mut FILE,
-        x: *mut *mut X509_REQ,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509_REQ;
-}
-extern "C" {
-    pub fn PEM_write_bio_X509_REQ(bp: *mut BIO, x: *mut X509_REQ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_X509_REQ(fp: *mut FILE, x: *mut X509_REQ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_bio_X509_REQ_NEW(bp: *mut BIO, x: *mut X509_REQ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_X509_REQ_NEW(fp: *mut FILE, x: *mut X509_REQ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_X509_CRL(
-        bp: *mut BIO,
-        x: *mut *mut X509_CRL,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509_CRL;
-}
-extern "C" {
-    pub fn PEM_read_X509_CRL(
-        fp: *mut FILE,
-        x: *mut *mut X509_CRL,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509_CRL;
-}
-extern "C" {
-    pub fn PEM_write_bio_X509_CRL(bp: *mut BIO, x: *mut X509_CRL) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_X509_CRL(fp: *mut FILE, x: *mut X509_CRL) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_PKCS7(
-        bp: *mut BIO,
-        x: *mut *mut PKCS7,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut PKCS7;
-}
-extern "C" {
-    pub fn PEM_read_PKCS7(
-        fp: *mut FILE,
-        x: *mut *mut PKCS7,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut PKCS7;
-}
-extern "C" {
-    pub fn PEM_write_bio_PKCS7(bp: *mut BIO, x: *mut PKCS7) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_PKCS7(fp: *mut FILE, x: *mut PKCS7) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_PKCS8(
-        bp: *mut BIO,
-        x: *mut *mut X509_SIG,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509_SIG;
-}
-extern "C" {
-    pub fn PEM_read_PKCS8(
-        fp: *mut FILE,
-        x: *mut *mut X509_SIG,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut X509_SIG;
-}
-extern "C" {
-    pub fn PEM_write_bio_PKCS8(bp: *mut BIO, x: *mut X509_SIG) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_PKCS8(fp: *mut FILE, x: *mut X509_SIG) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_PKCS8_PRIV_KEY_INFO(
-        bp: *mut BIO,
-        x: *mut *mut PKCS8_PRIV_KEY_INFO,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut PKCS8_PRIV_KEY_INFO;
-}
-extern "C" {
-    pub fn PEM_read_PKCS8_PRIV_KEY_INFO(
-        fp: *mut FILE,
-        x: *mut *mut PKCS8_PRIV_KEY_INFO,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut PKCS8_PRIV_KEY_INFO;
-}
-extern "C" {
-    pub fn PEM_write_bio_PKCS8_PRIV_KEY_INFO(
-        bp: *mut BIO,
-        x: *mut PKCS8_PRIV_KEY_INFO,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_PKCS8_PRIV_KEY_INFO(
-        fp: *mut FILE,
-        x: *mut PKCS8_PRIV_KEY_INFO,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_RSAPrivateKey(
-        bp: *mut BIO,
-        x: *mut *mut RSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut RSA;
-}
-extern "C" {
-    pub fn PEM_read_RSAPrivateKey(
-        fp: *mut FILE,
-        x: *mut *mut RSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut RSA;
-}
-extern "C" {
-    pub fn PEM_write_bio_RSAPrivateKey(
-        bp: *mut BIO,
-        x: *mut RSA,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_RSAPrivateKey(
-        fp: *mut FILE,
-        x: *mut RSA,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_RSAPublicKey(
-        bp: *mut BIO,
-        x: *mut *mut RSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut RSA;
-}
-extern "C" {
-    pub fn PEM_read_RSAPublicKey(
-        fp: *mut FILE,
-        x: *mut *mut RSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut RSA;
-}
-extern "C" {
-    pub fn PEM_write_bio_RSAPublicKey(bp: *mut BIO, x: *const RSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_RSAPublicKey(fp: *mut FILE, x: *const RSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_RSA_PUBKEY(
-        bp: *mut BIO,
-        x: *mut *mut RSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut RSA;
-}
-extern "C" {
-    pub fn PEM_read_RSA_PUBKEY(
-        fp: *mut FILE,
-        x: *mut *mut RSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut RSA;
-}
-extern "C" {
-    pub fn PEM_write_bio_RSA_PUBKEY(bp: *mut BIO, x: *mut RSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_RSA_PUBKEY(fp: *mut FILE, x: *mut RSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_DSAPrivateKey(
-        bp: *mut BIO,
-        x: *mut *mut DSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DSA;
-}
-extern "C" {
-    pub fn PEM_read_DSAPrivateKey(
-        fp: *mut FILE,
-        x: *mut *mut DSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DSA;
-}
-extern "C" {
-    pub fn PEM_write_bio_DSAPrivateKey(
-        bp: *mut BIO,
-        x: *mut DSA,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_DSAPrivateKey(
-        fp: *mut FILE,
-        x: *mut DSA,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_DSA_PUBKEY(
-        bp: *mut BIO,
-        x: *mut *mut DSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DSA;
-}
-extern "C" {
-    pub fn PEM_read_DSA_PUBKEY(
-        fp: *mut FILE,
-        x: *mut *mut DSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DSA;
-}
-extern "C" {
-    pub fn PEM_write_bio_DSA_PUBKEY(bp: *mut BIO, x: *mut DSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_DSA_PUBKEY(fp: *mut FILE, x: *mut DSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_DSAparams(
-        bp: *mut BIO,
-        x: *mut *mut DSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DSA;
-}
-extern "C" {
-    pub fn PEM_read_DSAparams(
-        fp: *mut FILE,
-        x: *mut *mut DSA,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DSA;
-}
-extern "C" {
-    pub fn PEM_write_bio_DSAparams(bp: *mut BIO, x: *const DSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_DSAparams(fp: *mut FILE, x: *const DSA) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_ECPrivateKey(
-        bp: *mut BIO,
-        x: *mut *mut EC_KEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EC_KEY;
-}
-extern "C" {
-    pub fn PEM_read_ECPrivateKey(
-        fp: *mut FILE,
-        x: *mut *mut EC_KEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EC_KEY;
-}
-extern "C" {
-    pub fn PEM_write_bio_ECPrivateKey(
-        bp: *mut BIO,
-        x: *mut EC_KEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_ECPrivateKey(
-        fp: *mut FILE,
-        x: *mut EC_KEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_EC_PUBKEY(
-        bp: *mut BIO,
-        x: *mut *mut EC_KEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EC_KEY;
-}
-extern "C" {
-    pub fn PEM_read_EC_PUBKEY(
-        fp: *mut FILE,
-        x: *mut *mut EC_KEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EC_KEY;
-}
-extern "C" {
-    pub fn PEM_write_bio_EC_PUBKEY(bp: *mut BIO, x: *mut EC_KEY) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_EC_PUBKEY(fp: *mut FILE, x: *mut EC_KEY) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_DHparams(
-        bp: *mut BIO,
-        x: *mut *mut DH,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DH;
-}
-extern "C" {
-    pub fn PEM_read_DHparams(
-        fp: *mut FILE,
-        x: *mut *mut DH,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut DH;
-}
-extern "C" {
-    pub fn PEM_write_bio_DHparams(bp: *mut BIO, x: *const DH) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_DHparams(fp: *mut FILE, x: *const DH) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_PrivateKey(
-        bp: *mut BIO,
-        x: *mut *mut EVP_PKEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EVP_PKEY;
-}
-extern "C" {
-    pub fn PEM_read_PrivateKey(
-        fp: *mut FILE,
-        x: *mut *mut EVP_PKEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EVP_PKEY;
-}
-extern "C" {
-    pub fn PEM_write_bio_PrivateKey(
-        bp: *mut BIO,
-        x: *mut EVP_PKEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_PrivateKey(
-        fp: *mut FILE,
-        x: *mut EVP_PKEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_uchar,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_read_bio_PUBKEY(
-        bp: *mut BIO,
-        x: *mut *mut EVP_PKEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EVP_PKEY;
-}
-extern "C" {
-    pub fn PEM_read_PUBKEY(
-        fp: *mut FILE,
-        x: *mut *mut EVP_PKEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EVP_PKEY;
-}
-extern "C" {
-    pub fn PEM_write_bio_PUBKEY(bp: *mut BIO, x: *mut EVP_PKEY) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_PUBKEY(fp: *mut FILE, x: *mut EVP_PKEY) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_bio_PKCS8PrivateKey_nid(
-        bp: *mut BIO,
-        x: *const EVP_PKEY,
-        nid: ::std::os::raw::c_int,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_bio_PKCS8PrivateKey(
-        bp: *mut BIO,
-        x: *const EVP_PKEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn i2d_PKCS8PrivateKey_bio(
-        bp: *mut BIO,
-        x: *const EVP_PKEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn i2d_PKCS8PrivateKey_nid_bio(
-        bp: *mut BIO,
-        x: *const EVP_PKEY,
-        nid: ::std::os::raw::c_int,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn d2i_PKCS8PrivateKey_bio(
-        bp: *mut BIO,
-        x: *mut *mut EVP_PKEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EVP_PKEY;
-}
-extern "C" {
-    pub fn i2d_PKCS8PrivateKey_fp(
-        fp: *mut FILE,
-        x: *const EVP_PKEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn i2d_PKCS8PrivateKey_nid_fp(
-        fp: *mut FILE,
-        x: *const EVP_PKEY,
-        nid: ::std::os::raw::c_int,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_PKCS8PrivateKey_nid(
-        fp: *mut FILE,
-        x: *const EVP_PKEY,
-        nid: ::std::os::raw::c_int,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn d2i_PKCS8PrivateKey_fp(
-        fp: *mut FILE,
-        x: *mut *mut EVP_PKEY,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut EVP_PKEY;
-}
-extern "C" {
-    pub fn PEM_write_PKCS8PrivateKey(
-        fp: *mut FILE,
-        x: *const EVP_PKEY,
-        enc: *const EVP_CIPHER,
-        pass: *const ::std::os::raw::c_char,
-        pass_len: ::std::os::raw::c_int,
-        cd: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -19113,6 +19825,9 @@ extern "C" {
 }
 extern "C" {
     pub fn SSL_CTX_up_ref(ctx: *mut SSL_CTX) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_CTX_dup_ref(ctx: *const SSL_CTX) -> *mut SSL_CTX;
 }
 extern "C" {
     pub fn SSL_CTX_free(ctx: *mut SSL_CTX);
@@ -19314,7 +20029,7 @@ extern "C" {
     pub fn SSL_get_mode(ssl: *const SSL) -> u32;
 }
 extern "C" {
-    pub fn SSL_CTX_set0_buffer_pool(ctx: *mut SSL_CTX, pool: *mut CRYPTO_BUFFER_POOL);
+    pub fn SSL_CTX_set1_buffer_pool(ctx: *mut SSL_CTX, pool: *mut CRYPTO_BUFFER_POOL);
 }
 extern "C" {
     pub fn SSL_CREDENTIAL_new_x509() -> *mut SSL_CREDENTIAL;
@@ -19323,12 +20038,18 @@ extern "C" {
     pub fn SSL_CREDENTIAL_up_ref(cred: *mut SSL_CREDENTIAL);
 }
 extern "C" {
+    pub fn SSL_CREDENTIAL_dup_ref(cred: *const SSL_CREDENTIAL) -> *mut SSL_CREDENTIAL;
+}
+extern "C" {
     pub fn SSL_CREDENTIAL_free(cred: *mut SSL_CREDENTIAL);
+}
+extern "C" {
+    pub fn SSL_CREDENTIAL_is_complete(cred: *const SSL_CREDENTIAL) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CREDENTIAL_set1_private_key(
         cred: *mut SSL_CREDENTIAL,
-        key: *mut EVP_PKEY,
+        key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -19348,19 +20069,19 @@ extern "C" {
 extern "C" {
     pub fn SSL_CREDENTIAL_set1_ocsp_response(
         cred: *mut SSL_CREDENTIAL,
-        ocsp: *mut CRYPTO_BUFFER,
+        ocsp: *const CRYPTO_BUFFER,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CREDENTIAL_set1_certificate_properties(
         cred: *mut SSL_CREDENTIAL,
-        cert_property_list: *mut CRYPTO_BUFFER,
+        cert_property_list: *const CRYPTO_BUFFER,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CREDENTIAL_set1_signed_cert_timestamp_list(
         cred: *mut SSL_CREDENTIAL,
-        sct_list: *mut CRYPTO_BUFFER,
+        sct_list: *const CRYPTO_BUFFER,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -19370,13 +20091,21 @@ extern "C" {
     );
 }
 extern "C" {
-    pub fn SSL_CTX_add1_credential(
-        ctx: *mut SSL_CTX,
+    pub fn SSL_CREDENTIAL_set1_session_id_context(
         cred: *mut SSL_CREDENTIAL,
+        sid_ctx: *const u8,
+        sid_ctx_len: usize,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_add1_credential(ssl: *mut SSL, cred: *mut SSL_CREDENTIAL) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_add1_credential(
+        ctx: *mut SSL_CTX,
+        cred: *const SSL_CREDENTIAL,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_add1_credential(ssl: *mut SSL, cred: *const SSL_CREDENTIAL)
+        -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_certs_clear(ssl: *mut SSL);
@@ -19385,16 +20114,19 @@ extern "C" {
     pub fn SSL_get0_selected_credential(ssl: *const SSL) -> *const SSL_CREDENTIAL;
 }
 extern "C" {
-    pub fn SSL_CTX_use_certificate(ctx: *mut SSL_CTX, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_use_certificate(ctx: *mut SSL_CTX, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_use_certificate(ssl: *mut SSL, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn SSL_use_certificate(ssl: *mut SSL, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_CTX_use_PrivateKey(ctx: *mut SSL_CTX, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_use_PrivateKey(
+        ctx: *mut SSL_CTX,
+        pkey: *const EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_use_PrivateKey(ssl: *mut SSL, pkey: *mut EVP_PKEY) -> ::std::os::raw::c_int;
+    pub fn SSL_use_PrivateKey(ssl: *mut SSL, pkey: *const EVP_PKEY) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CTX_set0_chain(
@@ -19405,20 +20137,20 @@ extern "C" {
 extern "C" {
     pub fn SSL_CTX_set1_chain(
         ctx: *mut SSL_CTX,
-        chain: *mut stack_st_X509,
+        chain: *const stack_st_X509,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_set0_chain(ssl: *mut SSL, chain: *mut stack_st_X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_set1_chain(ssl: *mut SSL, chain: *mut stack_st_X509) -> ::std::os::raw::c_int;
+    pub fn SSL_set1_chain(ssl: *mut SSL, chain: *const stack_st_X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CTX_add0_chain_cert(ctx: *mut SSL_CTX, x509: *mut X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_CTX_add1_chain_cert(ctx: *mut SSL_CTX, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_add1_chain_cert(ctx: *mut SSL_CTX, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_add0_chain_cert(ssl: *mut SSL, x509: *mut X509) -> ::std::os::raw::c_int;
@@ -19430,7 +20162,7 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_add1_chain_cert(ssl: *mut SSL, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn SSL_add1_chain_cert(ssl: *mut SSL, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CTX_clear_chain_certs(ctx: *mut SSL_CTX) -> ::std::os::raw::c_int;
@@ -19454,12 +20186,38 @@ extern "C" {
     );
 }
 extern "C" {
+    pub fn SSL_CTX_set_cert_cb_ex(
+        ctx: *mut SSL_CTX,
+        cb: ::std::option::Option<
+            unsafe extern "C" fn(
+                ssl: *mut SSL,
+                arg: *mut ::std::os::raw::c_void,
+                out_alert: *mut u8,
+            ) -> ::std::os::raw::c_int,
+        >,
+        arg: *mut ::std::os::raw::c_void,
+    );
+}
+extern "C" {
     pub fn SSL_set_cert_cb(
         ssl: *mut SSL,
         cb: ::std::option::Option<
             unsafe extern "C" fn(
                 ssl: *mut SSL,
                 arg: *mut ::std::os::raw::c_void,
+            ) -> ::std::os::raw::c_int,
+        >,
+        arg: *mut ::std::os::raw::c_void,
+    );
+}
+extern "C" {
+    pub fn SSL_set_cert_cb_ex(
+        ssl: *mut SSL,
+        cb: ::std::option::Option<
+            unsafe extern "C" fn(
+                ssl: *mut SSL,
+                arg: *mut ::std::os::raw::c_void,
+                out_alert: *mut u8,
             ) -> ::std::os::raw::c_int,
         >,
         arg: *mut ::std::os::raw::c_void,
@@ -19588,7 +20346,7 @@ extern "C" {
         ctx: *mut SSL_CTX,
         certs: *const *mut CRYPTO_BUFFER,
         num_certs: usize,
-        privkey: *mut EVP_PKEY,
+        privkey: *const EVP_PKEY,
         privkey_method: *const SSL_PRIVATE_KEY_METHOD,
     ) -> ::std::os::raw::c_int;
 }
@@ -19597,7 +20355,7 @@ extern "C" {
         ssl: *mut SSL,
         certs: *const *mut CRYPTO_BUFFER,
         num_certs: usize,
-        privkey: *mut EVP_PKEY,
+        privkey: *const EVP_PKEY,
         privkey_method: *const SSL_PRIVATE_KEY_METHOD,
     ) -> ::std::os::raw::c_int;
 }
@@ -19608,10 +20366,10 @@ extern "C" {
     pub fn SSL_get0_chain(ssl: *const SSL) -> *const stack_st_CRYPTO_BUFFER;
 }
 extern "C" {
-    pub fn SSL_CTX_use_RSAPrivateKey(ctx: *mut SSL_CTX, rsa: *mut RSA) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_use_RSAPrivateKey(ctx: *mut SSL_CTX, rsa: *const RSA) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_use_RSAPrivateKey(ssl: *mut SSL, rsa: *mut RSA) -> ::std::os::raw::c_int;
+    pub fn SSL_use_RSAPrivateKey(ssl: *mut SSL, rsa: *const RSA) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CTX_use_certificate_ASN1(
@@ -19896,6 +20654,22 @@ extern "C" {
     pub fn SSL_get_ciphers(ssl: *const SSL) -> *mut stack_st_SSL_CIPHER;
 }
 extern "C" {
+    pub fn SSL_CTX_set1_tls13_ciphers(
+        ctx: *mut SSL_CTX,
+        cipher_ids: *const u16,
+        flags: *const u32,
+        num_cipher_ids: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_set1_tls13_ciphers(
+        ssl: *mut SSL,
+        cipher_ids: *const u16,
+        flags: *const u32,
+        num_cipher_ids: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn SSL_is_init_finished(ssl: *const SSL) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -19959,32 +20733,13 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn PEM_read_bio_SSL_SESSION(
-        bp: *mut BIO,
-        x: *mut *mut SSL_SESSION,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut SSL_SESSION;
-}
-extern "C" {
-    pub fn PEM_read_SSL_SESSION(
-        fp: *mut FILE,
-        x: *mut *mut SSL_SESSION,
-        cb: pem_password_cb,
-        u: *mut ::std::os::raw::c_void,
-    ) -> *mut SSL_SESSION;
-}
-extern "C" {
-    pub fn PEM_write_bio_SSL_SESSION(bp: *mut BIO, x: *mut SSL_SESSION) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn PEM_write_SSL_SESSION(fp: *mut FILE, x: *mut SSL_SESSION) -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn SSL_SESSION_new(ctx: *const SSL_CTX) -> *mut SSL_SESSION;
 }
 extern "C" {
     pub fn SSL_SESSION_up_ref(session: *mut SSL_SESSION) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_SESSION_dup_ref(session: *const SSL_SESSION) -> *mut SSL_SESSION;
 }
 extern "C" {
     pub fn SSL_SESSION_free(session: *mut SSL_SESSION);
@@ -20009,6 +20764,31 @@ extern "C" {
         in_len: usize,
         ctx: *const SSL_CTX,
     ) -> *mut SSL_SESSION;
+}
+extern "C" {
+    pub fn PEM_read_bio_SSL_SESSION(
+        bio: *mut BIO,
+        out: *mut *mut SSL_SESSION,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut SSL_SESSION;
+}
+extern "C" {
+    pub fn PEM_read_SSL_SESSION(
+        fp: *mut FILE,
+        out: *mut *mut SSL_SESSION,
+        cb: pem_password_cb,
+        userdata: *mut ::std::os::raw::c_void,
+    ) -> *mut SSL_SESSION;
+}
+extern "C" {
+    pub fn PEM_write_bio_SSL_SESSION(
+        bio: *mut BIO,
+        in_: *const SSL_SESSION,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn PEM_write_SSL_SESSION(fp: *mut FILE, in_: *const SSL_SESSION) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_SESSION_get_version(session: *const SSL_SESSION) -> *const ::std::os::raw::c_char;
@@ -20048,6 +20828,9 @@ extern "C" {
     pub fn SSL_SESSION_get0_peer_certificates(
         session: *const SSL_SESSION,
     ) -> *const stack_st_CRYPTO_BUFFER;
+}
+extern "C" {
+    pub fn SSL_SESSION_get0_peer_rpk(session: *const SSL_SESSION) -> *mut EVP_PKEY;
 }
 extern "C" {
     pub fn SSL_SESSION_get0_signed_cert_timestamp_list(
@@ -20143,7 +20926,7 @@ extern "C" {
     pub fn SSL_CTX_get_session_cache_mode(ctx: *const SSL_CTX) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_set_session(ssl: *mut SSL, session: *mut SSL_SESSION) -> ::std::os::raw::c_int;
+    pub fn SSL_set_session(ssl: *mut SSL, session: *const SSL_SESSION) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_CTX_set_timeout(ctx: *mut SSL_CTX, timeout: u32) -> u32;
@@ -20198,58 +20981,36 @@ extern "C" {
 extern "C" {
     pub fn SSL_CTX_flush_sessions(ctx: *mut SSL_CTX, time: u64);
 }
+pub type SSL_new_session_cb = ::std::option::Option<
+    unsafe extern "C" fn(ssl: *mut SSL, session: *mut SSL_SESSION) -> ::std::os::raw::c_int,
+>;
 extern "C" {
-    pub fn SSL_CTX_sess_set_new_cb(
-        ctx: *mut SSL_CTX,
-        new_session_cb: ::std::option::Option<
-            unsafe extern "C" fn(ssl: *mut SSL, session: *mut SSL_SESSION) -> ::std::os::raw::c_int,
-        >,
-    );
+    pub fn SSL_CTX_sess_set_new_cb(ctx: *mut SSL_CTX, new_session_cb: SSL_new_session_cb);
 }
 extern "C" {
-    pub fn SSL_CTX_sess_get_new_cb(
-        ctx: *mut SSL_CTX,
-    ) -> ::std::option::Option<
-        unsafe extern "C" fn(ctx: *mut SSL, arg1: *mut SSL_SESSION) -> ::std::os::raw::c_int,
-    >;
+    pub fn SSL_CTX_sess_get_new_cb(ctx: *mut SSL_CTX) -> SSL_new_session_cb;
+}
+pub type SSL_remove_session_cb =
+    ::std::option::Option<unsafe extern "C" fn(ctx: *mut SSL_CTX, session: *mut SSL_SESSION)>;
+extern "C" {
+    pub fn SSL_CTX_sess_set_remove_cb(ctx: *mut SSL_CTX, remove_session_cb: SSL_remove_session_cb);
 }
 extern "C" {
-    pub fn SSL_CTX_sess_set_remove_cb(
-        ctx: *mut SSL_CTX,
-        remove_session_cb: ::std::option::Option<
-            unsafe extern "C" fn(ctx: *mut SSL_CTX, session: *mut SSL_SESSION),
-        >,
-    );
+    pub fn SSL_CTX_sess_get_remove_cb(ctx: *mut SSL_CTX) -> SSL_remove_session_cb;
+}
+pub type SSL_get_session_cb = ::std::option::Option<
+    unsafe extern "C" fn(
+        ssl: *mut SSL,
+        id: *const u8,
+        id_len: ::std::os::raw::c_int,
+        out_copy: *mut ::std::os::raw::c_int,
+    ) -> *mut SSL_SESSION,
+>;
+extern "C" {
+    pub fn SSL_CTX_sess_set_get_cb(ctx: *mut SSL_CTX, get_session_cb: SSL_get_session_cb);
 }
 extern "C" {
-    pub fn SSL_CTX_sess_get_remove_cb(
-        ctx: *mut SSL_CTX,
-    ) -> ::std::option::Option<unsafe extern "C" fn(ctx: *mut SSL_CTX, arg1: *mut SSL_SESSION)>;
-}
-extern "C" {
-    pub fn SSL_CTX_sess_set_get_cb(
-        ctx: *mut SSL_CTX,
-        get_session_cb: ::std::option::Option<
-            unsafe extern "C" fn(
-                ssl: *mut SSL,
-                id: *const u8,
-                id_len: ::std::os::raw::c_int,
-                out_copy: *mut ::std::os::raw::c_int,
-            ) -> *mut SSL_SESSION,
-        >,
-    );
-}
-extern "C" {
-    pub fn SSL_CTX_sess_get_get_cb(
-        ctx: *mut SSL_CTX,
-    ) -> ::std::option::Option<
-        unsafe extern "C" fn(
-            ctx: *mut SSL,
-            arg1: *const u8,
-            arg2: ::std::os::raw::c_int,
-            arg3: *mut ::std::os::raw::c_int,
-        ) -> *mut SSL_SESSION,
-    >;
+    pub fn SSL_CTX_sess_get_get_cb(ctx: *mut SSL_CTX) -> SSL_get_session_cb;
 }
 extern "C" {
     pub fn SSL_magic_pending_session_ptr() -> *mut SSL_SESSION;
@@ -20356,6 +21117,22 @@ extern "C" {
     pub fn SSL_set1_group_ids(
         ssl: *mut SSL,
         group_ids: *const u16,
+        num_group_ids: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_CTX_set1_group_ids_with_flags(
+        ctx: *mut SSL_CTX,
+        group_ids: *const u16,
+        flags: *const u32,
+        num_group_ids: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_set1_group_ids_with_flags(
+        ssl: *mut SSL,
+        group_ids: *const u16,
+        flags: *const u32,
         num_group_ids: usize,
     ) -> ::std::os::raw::c_int;
 }
@@ -20686,10 +21463,10 @@ extern "C" {
     pub fn SSL_CTX_get_client_CA_list(ctx: *const SSL_CTX) -> *mut stack_st_X509_NAME;
 }
 extern "C" {
-    pub fn SSL_add_client_CA(ssl: *mut SSL, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn SSL_add_client_CA(ssl: *mut SSL, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_CTX_add_client_CA(ctx: *mut SSL_CTX, x509: *mut X509) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_add_client_CA(ctx: *mut SSL_CTX, x509: *const X509) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_load_client_CA_file(file: *const ::std::os::raw::c_char) -> *mut stack_st_X509_NAME;
@@ -20717,6 +21494,13 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn SSL_CREDENTIAL_add1_trust_anchor_group(
+        cred: *mut SSL_CREDENTIAL,
+        pattern: *const u8,
+        pattern_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn SSL_CTX_set1_requested_trust_anchors(
         ctx: *mut SSL_CTX,
         ids: *const u8,
@@ -20739,6 +21523,20 @@ extern "C" {
         out: *mut *const u8,
         out_len: *mut usize,
     );
+}
+extern "C" {
+    pub fn SSL_CTX_set1_available_trust_anchors(
+        ctx: *mut SSL_CTX,
+        ids: *const u8,
+        ids_len: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_set1_available_trust_anchors(
+        ssl: *mut SSL,
+        ids: *const u8,
+        ids_len: usize,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_set_tlsext_host_name(
@@ -20919,13 +21717,13 @@ extern "C" {
 extern "C" {
     pub fn SSL_CTX_set1_tls_channel_id(
         ctx: *mut SSL_CTX,
-        private_key: *mut EVP_PKEY,
+        private_key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_set1_tls_channel_id(
         ssl: *mut SSL,
-        private_key: *mut EVP_PKEY,
+        private_key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -20985,6 +21783,23 @@ extern "C" {
 }
 extern "C" {
     pub fn SSL_get_selected_srtp_profile(ssl: *mut SSL) -> *const SRTP_PROTECTION_PROFILE;
+}
+extern "C" {
+    pub fn SSL_CREDENTIAL_new_pre_shared_key(
+        key: *const u8,
+        key_len: usize,
+        id: *const u8,
+        id_len: usize,
+        md: *const EVP_MD,
+        context: *const u8,
+        context_len: usize,
+    ) -> *mut SSL_CREDENTIAL;
+}
+extern "C" {
+    pub fn SSL_CREDENTIAL_get0_pre_shared_key_id(
+        cred: *const SSL_CREDENTIAL,
+        id_len: *mut usize,
+    ) -> *const u8;
 }
 extern "C" {
     pub fn SSL_CTX_set_psk_client_callback(
@@ -21066,8 +21881,51 @@ extern "C" {
 extern "C" {
     pub fn SSL_CREDENTIAL_set1_delegated_credential(
         cred: *mut SSL_CREDENTIAL,
-        dc: *mut CRYPTO_BUFFER,
+        dc: *const CRYPTO_BUFFER,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_CREDENTIAL_new_raw_public_key(pkey: *const EVP_PKEY) -> *mut SSL_CREDENTIAL;
+}
+extern "C" {
+    pub fn SSL_CREDENTIAL_new_raw_public_key_custom(
+        pubkey: *const EVP_PKEY,
+        method: *const SSL_PRIVATE_KEY_METHOD,
+    ) -> *mut SSL_CREDENTIAL;
+}
+extern "C" {
+    pub fn SSL_CTX_set1_accepted_peer_cert_types(
+        ctx: *mut SSL_CTX,
+        values: *const u8,
+        num_values: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_set1_accepted_peer_cert_types(
+        ssl: *mut SSL,
+        values: *const u8,
+        num_values: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_CTX_set1_available_client_cert_types(
+        ctx: *mut SSL_CTX,
+        values: *const u8,
+        num_values: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_set1_available_client_cert_types(
+        ssl: *mut SSL,
+        values: *const u8,
+        num_values: usize,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_get_peer_cert_type(ssl: *const SSL) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_get0_peer_rpk(ssl: *const SSL) -> *mut EVP_PKEY;
 }
 extern "C" {
     pub fn SSL_spake2plusv1_register(
@@ -21239,7 +22097,7 @@ extern "C" {
     pub fn SSL_SESSION_early_data_capable(session: *const SSL_SESSION) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_SESSION_copy_without_early_data(session: *mut SSL_SESSION) -> *mut SSL_SESSION;
+    pub fn SSL_SESSION_copy_without_early_data(session: *const SSL_SESSION) -> *mut SSL_SESSION;
 }
 extern "C" {
     pub fn SSL_early_data_accepted(ssl: *const SSL) -> ::std::os::raw::c_int;
@@ -21294,6 +22152,9 @@ extern "C" {
     pub fn SSL_set_ech_grease_payload_len(ssl: *mut SSL, len: u16);
 }
 extern "C" {
+    pub fn SSL_set_reject_unusable_ech_config(ssl: *mut SSL, enable: ::std::os::raw::c_int);
+}
+extern "C" {
     pub fn SSL_set1_ech_config_list(
         ssl: *mut SSL,
         ech_config_list: *const u8,
@@ -21331,6 +22192,9 @@ extern "C" {
     pub fn SSL_ECH_KEYS_up_ref(keys: *mut SSL_ECH_KEYS);
 }
 extern "C" {
+    pub fn SSL_ECH_KEYS_dup_ref(keys: *const SSL_ECH_KEYS) -> *mut SSL_ECH_KEYS;
+}
+extern "C" {
     pub fn SSL_ECH_KEYS_free(keys: *mut SSL_ECH_KEYS);
 }
 extern "C" {
@@ -21356,7 +22220,7 @@ extern "C" {
 extern "C" {
     pub fn SSL_CTX_set1_ech_keys(
         ctx: *mut SSL_CTX,
-        keys: *mut SSL_ECH_KEYS,
+        keys: *const SSL_ECH_KEYS,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -21726,12 +22590,6 @@ extern "C" {
     pub fn SSL_CTX_set_reverify_on_resume(ctx: *mut SSL_CTX, enabled: ::std::os::raw::c_int);
 }
 extern "C" {
-    pub fn SSL_set_enforce_rsa_key_usage(ssl: *mut SSL, enabled: ::std::os::raw::c_int);
-}
-extern "C" {
-    pub fn SSL_was_key_usage_invalid(ssl: *const SSL) -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn SSL_CTX_set_info_callback(
         ctx: *mut SSL_CTX,
         cb: ::std::option::Option<
@@ -21791,6 +22649,9 @@ extern "C" {
 }
 extern "C" {
     pub fn SSL_get_server_random(ssl: *const SSL, out: *mut u8, max_out: usize) -> usize;
+}
+extern "C" {
+    pub fn SSL_get_signature_algorithm_used(ssl: *const SSL) -> u16;
 }
 extern "C" {
     pub fn SSL_get_pending_cipher(ssl: *const SSL) -> *const SSL_CIPHER;
@@ -21879,6 +22740,57 @@ extern "C" {
         in_: *const u8,
         len: usize,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_use_second_keyshare(ssl: *mut SSL, enabled: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn SSL_CTX_use_second_keyshare(ctx: *mut SSL_CTX, enabled: ::std::os::raw::c_int);
+}
+impl ssl_compliance_policy_t {
+    pub const ssl_compliance_policy_none: ssl_compliance_policy_t = ssl_compliance_policy_t(0);
+    pub const ssl_compliance_policy_fips_202205: ssl_compliance_policy_t =
+        ssl_compliance_policy_t(1);
+    pub const ssl_compliance_policy_fips_202609: ssl_compliance_policy_t =
+        ssl_compliance_policy_t(2);
+    pub const ssl_compliance_policy_wpa3_192_202304: ssl_compliance_policy_t =
+        ssl_compliance_policy_t(3);
+    pub const ssl_compliance_policy_cnsa_202407: ssl_compliance_policy_t =
+        ssl_compliance_policy_t(4);
+    pub const ssl_compliance_policy_cnsa1_202603: ssl_compliance_policy_t =
+        ssl_compliance_policy_t(5);
+    pub const ssl_compliance_policy_cnsa2_202603: ssl_compliance_policy_t =
+        ssl_compliance_policy_t(6);
+}
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub struct ssl_compliance_policy_t(pub ::std::os::raw::c_uint);
+extern "C" {
+    pub fn SSL_CTX_set_compliance_policy(
+        ctx: *mut SSL_CTX,
+        policy: ssl_compliance_policy_t,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_CTX_get_compliance_policy(ctx: *const SSL_CTX) -> ssl_compliance_policy_t;
+}
+extern "C" {
+    pub fn SSL_set_compliance_policy(
+        ssl: *mut SSL,
+        policy: ssl_compliance_policy_t,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_get_compliance_policy(ssl: *const SSL) -> ssl_compliance_policy_t;
+}
+extern "C" {
+    pub fn SSL_set_server_padding_request(ssl: *mut SSL, num_bytes: u16);
+}
+extern "C" {
+    pub fn SSL_set_server_padding_enabled(ssl: *mut SSL, enabled: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn SSL_server_sent_requested_padding(ssl: *const SSL) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn SSL_library_init() -> ::std::os::raw::c_int;
@@ -22108,7 +23020,7 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn i2d_SSL_SESSION(in_: *mut SSL_SESSION, pp: *mut *mut u8) -> ::std::os::raw::c_int;
+    pub fn i2d_SSL_SESSION(in_: *const SSL_SESSION, pp: *mut *mut u8) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn d2i_SSL_SESSION(
@@ -22150,6 +23062,12 @@ extern "C" {
 }
 extern "C" {
     pub fn SSL_get_server_tmp_key(
+        ssl: *mut SSL,
+        out_key: *mut *mut EVP_PKEY,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn SSL_get_peer_tmp_key(
         ssl: *mut SSL,
         out_key: *mut *mut EVP_PKEY,
     ) -> ::std::os::raw::c_int;
@@ -22344,7 +23262,7 @@ extern "C" {
     pub fn SSL_get_session(ssl: *const SSL) -> *mut SSL_SESSION;
 }
 extern "C" {
-    pub fn SSL_get1_session(ssl: *mut SSL) -> *mut SSL_SESSION;
+    pub fn SSL_get1_session(ssl: *const SSL) -> *mut SSL_SESSION;
 }
 extern "C" {
     pub fn OPENSSL_init_ssl(
@@ -22427,12 +23345,6 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn SSL_use_second_keyshare(ssl: *mut SSL, enabled: ::std::os::raw::c_int);
-}
-extern "C" {
-    pub fn SSL_CTX_use_second_keyshare(ctx: *mut SSL_CTX, enabled: ::std::os::raw::c_int);
-}
-extern "C" {
     pub fn SSL_CTX_check_private_key(ctx: *const SSL_CTX) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -22441,44 +23353,8 @@ extern "C" {
 extern "C" {
     pub fn SSL_CTX_get_security_level(ctx: *const SSL_CTX) -> ::std::os::raw::c_int;
 }
-impl ssl_compliance_policy_t {
-    pub const ssl_compliance_policy_none: ssl_compliance_policy_t = ssl_compliance_policy_t(0);
-    pub const ssl_compliance_policy_fips_202205: ssl_compliance_policy_t =
-        ssl_compliance_policy_t(1);
-    pub const ssl_compliance_policy_wpa3_192_202304: ssl_compliance_policy_t =
-        ssl_compliance_policy_t(2);
-    pub const ssl_compliance_policy_cnsa_202407: ssl_compliance_policy_t =
-        ssl_compliance_policy_t(3);
-}
-#[repr(transparent)]
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub struct ssl_compliance_policy_t(pub ::std::os::raw::c_uint);
 extern "C" {
-    pub fn SSL_CTX_set_compliance_policy(
-        ctx: *mut SSL_CTX,
-        policy: ssl_compliance_policy_t,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn SSL_CTX_get_compliance_policy(ctx: *const SSL_CTX) -> ssl_compliance_policy_t;
-}
-extern "C" {
-    pub fn SSL_set_compliance_policy(
-        ssl: *mut SSL,
-        policy: ssl_compliance_policy_t,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn SSL_get_compliance_policy(ssl: *const SSL) -> ssl_compliance_policy_t;
-}
-extern "C" {
-    pub fn SSL_set_server_padding_request(ssl: *mut SSL, num_bytes: u16);
-}
-extern "C" {
-    pub fn SSL_set_server_padding_enabled(ssl: *mut SSL, enabled: ::std::os::raw::c_int);
-}
-extern "C" {
-    pub fn SSL_server_sent_requested_padding(ssl: *const SSL) -> ::std::os::raw::c_int;
+    pub fn SSL_CTX_set0_buffer_pool(ctx: *mut SSL_CTX, pool: *mut CRYPTO_BUFFER_POOL);
 }
 extern "C" {
     pub fn TRUST_TOKEN_experiment_v1() -> *const TRUST_TOKEN_METHOD;
@@ -22573,6 +23449,11 @@ extern "C" {
     pub fn TRUST_TOKEN_CLIENT_free(ctx: *mut TRUST_TOKEN_CLIENT);
 }
 extern "C" {
+    pub fn TRUST_TOKEN_CLIENT_dup_for_testing(
+        ctx: *const TRUST_TOKEN_CLIENT,
+    ) -> *mut TRUST_TOKEN_CLIENT;
+}
+extern "C" {
     pub fn TRUST_TOKEN_CLIENT_add_key(
         ctx: *mut TRUST_TOKEN_CLIENT,
         out_key_index: *mut usize,
@@ -22583,7 +23464,7 @@ extern "C" {
 extern "C" {
     pub fn TRUST_TOKEN_CLIENT_set_srr_key(
         ctx: *mut TRUST_TOKEN_CLIENT,
-        key: *mut EVP_PKEY,
+        key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -22653,14 +23534,7 @@ extern "C" {
 extern "C" {
     pub fn TRUST_TOKEN_ISSUER_set_srr_key(
         ctx: *mut TRUST_TOKEN_ISSUER,
-        key: *mut EVP_PKEY,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn TRUST_TOKEN_ISSUER_set_metadata_key(
-        ctx: *mut TRUST_TOKEN_ISSUER,
-        key: *const u8,
-        len: usize,
+        key: *const EVP_PKEY,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {

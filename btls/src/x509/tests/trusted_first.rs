@@ -47,8 +47,9 @@ fn test_verify_cert() {
         )
     );
 
+    // BoringSSL always prefers trusted certificates now: X509_V_FLAG_TRUSTED_FIRST is 0.
     assert_eq!(
-        Err(X509VerifyError::CERT_HAS_EXPIRED),
+        Ok(()),
         verify(
             &leaf,
             &[&root1, &root2],

@@ -1,41 +1,41 @@
-Adds SSL_set_ech_grease_aead and SSL_set_ech_grease_payload_len: the HPKE AEAD
-and the payload length of a GREASE encrypted_client_hello extension. By default
-BoringSSL picks the AEAD from the AES hardware support and a random payload
-length; NSS (Firefox) always announces ChaCha20-Poly1305 and sizes the payload
-like a real ClientHelloInner.
-
 diff --git a/include/openssl/ssl.h b/include/openssl/ssl.h
-index 40bd792..d583291 100644
+index 95d67c37..bd78b741 100644
 --- a/include/openssl/ssl.h
 +++ b/include/openssl/ssl.h
-@@ -4331,6 +4331,18 @@ OPENSSL_EXPORT const char *SSL_early_data_reason_string(
+@@ -4762,6 +4762,18 @@ OPENSSL_EXPORT const char *SSL_early_data_reason_string(
  // ECH extension when no supported ECHConfig is available.
  OPENSSL_EXPORT void SSL_set_enable_ech_grease(SSL *ssl, int enable);
  
 +// SSL_set_ech_grease_aead sets the HPKE AEAD that a GREASE ECH extension on
-+// |ssl| announces. |aead_id| is one of the |EVP_HPKE_*| AEAD IDs supported for
++// `ssl` announces. `aead_id` is one of the `EVP_HPKE_*` AEAD IDs supported for
 +// ECH, or zero for the default: AES-128-GCM with AES hardware support and
-+// ChaCha20-Poly1305 without. It returns one on success and zero if |aead_id|
++// ChaCha20-Poly1305 without. It returns one on success and zero if `aead_id`
 +// is not supported.
 +OPENSSL_EXPORT int SSL_set_ech_grease_aead(SSL *ssl, uint16_t aead_id);
 +
 +// SSL_set_ech_grease_payload_len sets the length of the payload field,
-+// including the AEAD tag, of a GREASE ECH extension on |ssl|. Zero, the
++// including the AEAD tag, of a GREASE ECH extension on `ssl`. Zero, the
 +// default, picks a random multiple of 32 between 128 and 224 plus the tag.
 +OPENSSL_EXPORT void SSL_set_ech_grease_payload_len(SSL *ssl, uint16_t len);
 +
- // SSL_set1_ech_config_list configures |ssl| to, as a client, offer ECH with the
- // specified configuration. |ech_config_list| should contain a serialized
- // ECHConfigList structure. It returns one on success and zero on error.
+ // SSL_set_reject_unusable_ech_config configures whether the client will fail
+ // the handshake if a valid, supported ECHConfig cannot be selected to offer
+ // ECH.
 diff --git a/ssl/encrypted_client_hello.cc b/ssl/encrypted_client_hello.cc
-index be01d9c..f95ddfd 100644
+index a8bec51d..ec04110d 100644
 --- a/ssl/encrypted_client_hello.cc
 +++ b/ssl/encrypted_client_hello.cc
-@@ -740,7 +740,10 @@ static bool setup_ech_grease(SSL_HANDSHAKE *hs) {
-                               ? hs->ssl->config->aes_hw_override_value
-                               : EVP_has_aes_hardware();
-   const EVP_HPKE_AEAD *aead =
--      has_aes_hw ? EVP_hpke_aes_128_gcm() : EVP_hpke_chacha20_poly1305();
+@@ -741,9 +741,14 @@ static bool setup_ech_grease(SSL_HANDSHAKE *hs) {
+   }
+ 
+   const uint16_t kdf_id = EVP_HPKE_HKDF_SHA256;
+-  const EVP_HPKE_AEAD *aead = EVP_has_aes_hardware()
+-                                  ? EVP_hpke_aes_128_gcm()
+-                                  : EVP_hpke_chacha20_poly1305();
++  const bool has_aes_hw = hs->config->aes_hw_override
++                              ? hs->config->aes_hw_override_value
++                              : EVP_has_aes_hardware();
++  const EVP_HPKE_AEAD *aead =
 +      hs->config->ech_grease_aead_id != 0
 +          ? get_ech_aead(hs->config->ech_grease_aead_id)
 +          : (has_aes_hw ? EVP_hpke_aes_128_gcm()
@@ -43,9 +43,9 @@ index be01d9c..f95ddfd 100644
    static_assert(ssl_grease_ech_config_id < sizeof(hs->grease_seed),
                  "hs->grease_seed is too small");
    uint8_t config_id = hs->grease_seed[ssl_grease_ech_config_id];
-@@ -765,7 +768,9 @@ static bool setup_ech_grease(SSL_HANDSHAKE *hs) {
+@@ -768,7 +773,9 @@ static bool setup_ech_grease(SSL_HANDSHAKE *hs) {
    // estimate maximum_name_length to be between 32 and 100 bytes. Then round up
-   // to a multiple of 32, to match draft-ietf-tls-esni-13, section 6.1.3.
+   // to a multiple of 32, to match RFC 9849, section 6.1.3.
    const size_t payload_len =
 -      32 * random_size(128 / 32, 224 / 32) + aead_overhead(aead);
 +      hs->config->ech_grease_payload_len != 0
@@ -54,39 +54,41 @@ index be01d9c..f95ddfd 100644
    bssl::ScopedCBB cbb;
    CBB enc_cbb, payload_cbb;
    uint8_t *payload;
-@@ -923,6 +928,25 @@ void SSL_set_enable_ech_grease(SSL *ssl, int enable) {
-   ssl->config->ech_grease_enabled = !!enable;
+@@ -912,6 +919,27 @@ void SSL_set_reject_unusable_ech_config(SSL *ssl, int enable) {
+   ssl_impl->config->reject_unusable_ech_config = !!enable;
  }
  
 +int SSL_set_ech_grease_aead(SSL *ssl, uint16_t aead_id) {
-+  if (!ssl->config) {
++  auto *ssl_impl = FromOpaque(ssl);
++  if (!ssl_impl->config) {
 +    return 0;
 +  }
 +  if (aead_id != 0 && get_ech_aead(aead_id) == nullptr) {
 +    OPENSSL_PUT_ERROR(SSL, SSL_R_UNSUPPORTED_ECH_SERVER_CONFIG);
 +    return 0;
 +  }
-+  ssl->config->ech_grease_aead_id = aead_id;
++  ssl_impl->config->ech_grease_aead_id = aead_id;
 +  return 1;
 +}
 +
 +void SSL_set_ech_grease_payload_len(SSL *ssl, uint16_t len) {
-+  if (!ssl->config) {
++  auto *ssl_impl = FromOpaque(ssl);
++  if (!ssl_impl->config) {
 +    return;
 +  }
-+  ssl->config->ech_grease_payload_len = len;
++  ssl_impl->config->ech_grease_payload_len = len;
 +}
 +
  int SSL_set1_ech_config_list(SSL *ssl, const uint8_t *ech_config_list,
                               size_t ech_config_list_len) {
-   if (!ssl->config) {
+   auto *ssl_impl = FromOpaque(ssl);
 diff --git a/ssl/internal.h b/ssl/internal.h
-index 71f6c11..4116d89 100644
+index 71f4eb4f..8e445cb9 100644
 --- a/ssl/internal.h
 +++ b/ssl/internal.h
-@@ -3365,6 +3365,12 @@ struct SSL_CONFIG {
-   // verify_mode is a bitmask of |SSL_VERIFY_*| values.
-   uint8_t verify_mode = SSL_VERIFY_NONE;
+@@ -3567,6 +3567,12 @@ struct SSL_CONFIG {
+   // types from the configured credential list.
+   InplaceVector<uint8_t, kNumCertTypes> available_client_cert_types;
  
 +  // ech_grease_aead_id, if not zero, is the HPKE AEAD announced by ECH GREASE.
 +  uint16_t ech_grease_aead_id = 0;
@@ -97,3 +99,83 @@ index 71f6c11..4116d89 100644
    // ech_grease_enabled controls whether ECH GREASE may be sent in the
    // ClientHello.
    bool ech_grease_enabled : 1;
+@@ -3630,6 +3636,12 @@ struct SSL_CONFIG {
+   // be preserved, potentially preferring ChaCha20-Poly1305 over AES-GCM ciphers.
+   // It is only effective on the client side.
+   bool preserve_tls13_cipher_list : 1;
++
++  // aes_hw_override, if true, makes defaults that depend on AES hardware
++  // support (the TLS 1.3 cipher list, the ECH GREASE AEAD) assume
++  // `aes_hw_override_value` instead of the machine's.
++  bool aes_hw_override : 1;
++  bool aes_hw_override_value : 1;
+ };
+ 
+ // From RFC 8446, used in determining PSK modes.
+@@ -4284,6 +4296,12 @@ class SSLContext : public ssl_ctx_st, public RefCounted<SSLContext> {
+   // It is only effective on the client side.
+   bool preserve_tls13_cipher_list : 1;
+ 
++  // aes_hw_override, if true, makes defaults that depend on AES hardware
++  // support (the TLS 1.3 cipher list, the ECH GREASE AEAD) assume
++  // `aes_hw_override_value` instead of the machine's.
++  bool aes_hw_override : 1;
++  bool aes_hw_override_value : 1;
++
+   // tls13_legacy_extensions is whether a client sends extended_master_secret
+   // and renegotiation_info even if it only offers TLS 1.3.
+   bool tls13_legacy_extensions : 1;
+diff --git a/ssl/ssl_lib.cc b/ssl/ssl_lib.cc
+index b7efa0ca..06464767 100644
+--- a/ssl/ssl_lib.cc
++++ b/ssl/ssl_lib.cc
+@@ -377,6 +377,8 @@ bssl::SSLContext::SSLContext(const SSL_METHOD *ssl_method)
+       enable_early_data(false),
+       resumption_across_names_enabled(false),
+       preserve_tls13_cipher_list(false),
++      aes_hw_override(false),
++      aes_hw_override_value(false),
+       tls13_legacy_extensions(false) {
+   CRYPTO_new_ex_data(&ex_data);
+ }
+@@ -563,6 +565,8 @@ SSL *SSL_new(SSL_CTX *ctx) {
+   ssl->config->record_size_limit = ctx_impl->record_size_limit;
+   ssl->config->preserve_tls13_cipher_list =
+       ctx_impl->preserve_tls13_cipher_list;
++  ssl->config->aes_hw_override = ctx_impl->aes_hw_override;
++  ssl->config->aes_hw_override_value = ctx_impl->aes_hw_override_value;
+ 
+   if (!ssl->method->ssl_new(ssl.get()) ||
+       !ssl->ctx->x509_method->ssl_new(ssl->s3->hs.get())) {
+@@ -587,7 +591,9 @@ SSL_CONFIG::SSL_CONFIG(SSLImpl *ssl_arg)
+       disable_second_keyshare(false),
+       alps_use_new_codepoint(true),
+       server_padding_enabled(false),
+-      preserve_tls13_cipher_list(false) {
++      preserve_tls13_cipher_list(false),
++      aes_hw_override(false),
++      aes_hw_override_value(false) {
+   assert(ssl);
+ }
+ 
+@@ -2394,7 +2400,10 @@ void SSL_set_preserve_tls13_cipher_list(SSL *ssl,
+ }
+ 
+ void SSL_CTX_set_aes_hw_override(SSL_CTX *ctx, int override_value) {
+-  ssl_create_default_tls13_cipher_list_for(&FromOpaque(ctx)->tls13_cipher_list,
++  auto *ctx_impl = FromOpaque(ctx);
++  ctx_impl->aes_hw_override = true;
++  ctx_impl->aes_hw_override_value = !!override_value;
++  ssl_create_default_tls13_cipher_list_for(&ctx_impl->tls13_cipher_list,
+                                            !!override_value);
+ }
+ 
+@@ -2403,6 +2412,8 @@ void SSL_set_aes_hw_override(SSL *ssl, int override_value) {
+   if (!ssl_impl->config) {
+     return;
+   }
++  ssl_impl->config->aes_hw_override = true;
++  ssl_impl->config->aes_hw_override_value = !!override_value;
+   ssl_create_default_tls13_cipher_list_for(
+       &ssl_impl->config->tls13_cipher_list, !!override_value);
+ }
