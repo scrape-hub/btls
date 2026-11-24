@@ -206,15 +206,14 @@ fn msvc_lib_subdir(config: &Config) -> Option<&'static str> {
     }
 }
 
-/// Whether the target is x86 or x86_64 Windows with the GNU toolchain (MinGW, which R uses).
-/// BoringSSL assembles NASM there as for MSVC, and the linker takes NASM's win64 objects.
-fn is_mingw_x86(config: &Config) -> bool {
-    config.target_os == "windows"
-        && config.target_env == "gnu"
-        && matches!(config.target_arch.as_str(), "x86_64" | "x86")
+/// Whether the target is x86_64 Windows with the GNU toolchain (MinGW, which R uses). BoringSSL
+/// assembles NASM there as for MSVC, and the linker takes NASM's win64 objects; 32-bit MinGW does
+/// not link its x86 output.
+fn is_mingw_x86_64(config: &Config) -> bool {
+    config.target_os == "windows" && config.target_env == "gnu" && config.target_arch == "x86_64"
 }
 
-/// Chooses how a Windows build with MSVC, or with MinGW on x86/x86_64, assembles BoringSSL's
+/// Chooses how a Windows build with MSVC, or with MinGW on x86_64, assembles BoringSSL's
 /// assembly.
 ///
 /// On x86 and x86_64 BoringSSL uses NASM, and its CMakeLists.txt fails without it. Pass the
@@ -333,7 +332,8 @@ fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
     }
 
     if config.host == config.target {
-        if (config.target_os == "windows" && config.target_env == "msvc") || is_mingw_x86(config) {
+        if (config.target_os == "windows" && config.target_env == "msvc") || is_mingw_x86_64(config)
+        {
             configure_windows_asm(config, &mut boringssl_cmake);
         }
         return boringssl_cmake;
@@ -418,7 +418,7 @@ fn get_boringssl_cmake_config(config: &Config) -> cmake::Config {
             boringssl_cmake.cflag(&cflag);
         }
 
-        "windows" if config.host.contains("windows") && is_mingw_x86(config) => {
+        "windows" if config.host.contains("windows") && is_mingw_x86_64(config) => {
             // An MSVC host building for MinGW, as rustup's default toolchain does for R.
             configure_windows_asm(config, &mut boringssl_cmake);
         }
